@@ -40,7 +40,8 @@ import {
   LogOut,
   LogIn,
   AlertCircle,
-  Edit2
+  Edit2,
+  Clock
 } from 'lucide-react';
 
 // --- UPDATED FIREBASE CONFIGURATION ---
@@ -65,11 +66,15 @@ export default function App() {
   const [commissioners, setCommissioners] = useState([]);
   const [meetings, setMeetings] = useState([]);
   
-  // UI States
+  // Modals / Editing States
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isAddingMeeting, setIsAddingMeeting] = useState(false);
   const [editingMeeting, setEditingMeeting] = useState(null);
   const [isAddingCommissioner, setIsAddingCommissioner] = useState(false);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [editingCommissioner, setEditingCommissioner] = useState(null);
+  const [editingItem, setEditingItem] = useState(null); // { meetingId, itemIndex, itemData }
+  const [isAddingItemToMeeting, setIsAddingItemToMeeting] = useState(null); // meetingId
+
   const [loginError, setLoginError] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
@@ -108,7 +113,7 @@ export default function App() {
     };
   }, [user]);
 
-  // --- Auth Actions ---
+  // --- Actions ---
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoginError("");
@@ -125,80 +130,92 @@ export default function App() {
 
   const handleLogout = async () => { await signOut(auth); };
 
-  // --- Database Actions ---
+  // --- Commissioner Management ---
+  const handleCommissionerSubmit = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = {
+      name: formData.get('name'),
+      district: formData.get('district'),
+      image: formData.get('image') || `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.get('name'))}&background=random`,
+      party: formData.get('party') || "Non-partisan"
+    };
+
+    if (editingCommissioner) {
+      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'commissioners', editingCommissioner.id), data);
+      setEditingCommissioner(null);
+    } else {
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'commissioners'), data);
+      setIsAddingCommissioner(false);
+    }
+  };
+
+  // --- Meeting Management ---
   const handleMeetingSubmit = async (e) => {
     e.preventDefault();
-    if (!isAdmin) return;
     const formData = new FormData(e.target);
-    
     const meetingData = {
       date: formData.get('date'),
       title: formData.get('title'),
-      items: editingMeeting ? editingMeeting.items : [{
-        id: crypto.randomUUID(),
-        title: formData.get('itemTitle'),
-        category: formData.get('category'),
-        description: formData.get('description'),
-        status: "Passed",
-        votes: Object.fromEntries(commissioners.map(c => [c.id, "Yes"]))
-      }]
     };
 
     if (editingMeeting) {
-      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', editingMeeting.id), {
-        date: meetingData.date,
-        title: meetingData.title
-      });
+      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', editingMeeting.id), meetingData);
       setEditingMeeting(null);
     } else {
-      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'meetings'), meetingData);
+      // New meeting starts with zero items
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'meetings'), {
+        ...meetingData,
+        items: []
+      });
       setIsAddingMeeting(false);
     }
   };
 
-  const deleteMeeting = async (id) => {
-    if (!isAdmin || !window.confirm("Delete this entire meeting and all its votes?")) return;
-    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', id));
+  // --- Item Management ---
+  const handleItemSubmit = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const meetingId = isAddingItemToMeeting || editingItem?.meetingId;
+    const meeting = meetings.find(m => m.id === meetingId);
+    if (!meeting) return;
+
+    const newItemData = {
+      id: editingItem ? editingItem.itemData.id : crypto.randomUUID(),
+      title: formData.get('title'),
+      category: formData.get('category'),
+      description: formData.get('description'),
+      status: formData.get('status'),
+      votes: editingItem ? editingItem.itemData.votes : Object.fromEntries(commissioners.map(c => [c.id, "Yes"]))
+    };
+
+    let updatedItems = [...(meeting.items || [])];
+    if (editingItem) {
+      updatedItems[editingItem.itemIndex] = newItemData;
+    } else {
+      updatedItems.push(newItemData);
+    }
+
+    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meetingId), { items: updatedItems });
+    setEditingItem(null);
+    setIsAddingItemToMeeting(null);
+  };
+
+  const deleteItem = async (meetingId, itemIndex) => {
+    if (!window.confirm("Delete this agenda item?")) return;
+    const meeting = meetings.find(m => m.id === meetingId);
+    const updatedItems = meeting.items.filter((_, i) => i !== itemIndex);
+    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meetingId), { items: updatedItems });
   };
 
   const updateVote = async (meetingId, itemIndex, commId, current) => {
     if (!isAdmin) return;
     const meeting = meetings.find(m => m.id === meetingId);
     const updatedItems = [...meeting.items];
-    
-    // Cycle: Yes -> No -> N/A -> Yes
     let nextVote = "Yes";
     if (current === "Yes") nextVote = "No";
     else if (current === "No") nextVote = "N/A";
-    
     updatedItems[itemIndex].votes[commId] = nextVote;
-    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meetingId), { items: updatedItems });
-  };
-
-  const handleAddCommissioner = async (e) => {
-    e.preventDefault();
-    if (!isAdmin) return;
-    const formData = new FormData(e.target);
-    const newComm = {
-      name: formData.get('name'),
-      district: formData.get('district'),
-      image: formData.get('image') || `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.get('name'))}&background=random`,
-      party: formData.get('party') || "Non-partisan"
-    };
-    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'commissioners'), newComm);
-    setIsAddingCommissioner(false);
-  };
-
-  const deleteCommissioner = async (id) => {
-    if (!isAdmin || !window.confirm("Remove this commissioner?")) return;
-    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'commissioners', id));
-  };
-
-  const toggleItemStatus = async (meetingId, itemIndex) => {
-    if (!isAdmin) return;
-    const meeting = meetings.find(m => m.id === meetingId);
-    const updatedItems = [...meeting.items];
-    updatedItems[itemIndex].status = updatedItems[itemIndex].status === 'Passed' ? 'Failed' : 'Passed';
     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meetingId), { items: updatedItems });
   };
 
@@ -246,7 +263,7 @@ export default function App() {
             <p className="text-slate-500 font-semibold text-lg">Civic accountability for Alamogordo.</p>
           </div>
           <div className="flex gap-4">
-            {isAdmin && activeTab === 'meetings' && (<button onClick={() => setIsAddingMeeting(true)} className="bg-blue-600 text-white px-6 py-3 rounded-[20px] font-black flex items-center gap-2 hover:bg-blue-700 shadow-xl shadow-blue-600/20 transition-all"><Plus size={20} /> Log Vote</button>)}
+            {isAdmin && activeTab === 'meetings' && (<button onClick={() => setIsAddingMeeting(true)} className="bg-blue-600 text-white px-6 py-3 rounded-[20px] font-black flex items-center gap-2 hover:bg-blue-700 shadow-xl shadow-blue-600/20 transition-all"><Plus size={20} /> New Date</button>)}
             {isAdmin && activeTab === 'commissioners' && (<button onClick={() => setIsAddingCommissioner(true)} className="bg-orange-500 text-white px-6 py-3 rounded-[20px] font-black flex items-center gap-2 hover:bg-orange-600 shadow-xl shadow-orange-500/20 transition-all"><Plus size={20} /> New Member</button>)}
           </div>
         </header>
@@ -267,11 +284,11 @@ export default function App() {
               </div>
             </div>
             <div className="flex flex-col gap-10">
-              <div className="bg-white p-10 rounded-[44px] border border-slate-100 shadow-sm group hover:border-blue-200 transition-all duration-300">
+              <div className="bg-white p-10 rounded-[44px] border border-slate-100 shadow-sm">
                 <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4">Total Decisions</p>
                 <p className="text-7xl font-black text-slate-900 tabular-nums">{stats.total}</p>
               </div>
-              <div className="bg-white p-10 rounded-[44px] border border-slate-100 shadow-sm group hover:border-green-200 transition-all duration-300">
+              <div className="bg-white p-10 rounded-[44px] border border-slate-100 shadow-sm">
                 <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4">Pass Rate</p>
                 <p className="text-7xl font-black text-green-600 tabular-nums">{stats.total > 0 ? Math.round((stats.passed / stats.total) * 100) : 0}%</p>
               </div>
@@ -283,7 +300,12 @@ export default function App() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {commissioners.map(comm => (
               <div key={comm.id} className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm relative group hover:shadow-2xl transition-all duration-500">
-                {isAdmin && (<button onClick={() => deleteCommissioner(comm.id)} className="absolute top-6 right-6 text-slate-200 hover:text-red-500 transition-colors"><Trash2 size={18} /></button>)}
+                {isAdmin && (
+                  <div className="absolute top-6 right-6 flex gap-2">
+                    <button onClick={() => setEditingCommissioner(comm)} className="p-2 text-slate-200 hover:text-blue-500"><Edit2 size={18}/></button>
+                    <button onClick={() => deleteCommissioner(comm.id)} className="p-2 text-slate-200 hover:text-red-500"><Trash2 size={18}/></button>
+                  </div>
+                )}
                 <div className="flex flex-col items-center text-center">
                   <img src={comm.image} className="w-28 h-28 rounded-[32px] object-cover border-8 border-slate-50 mb-6 shadow-lg" alt="" />
                   <h3 className="font-black text-2xl text-slate-900 mb-1">{comm.name}</h3>
@@ -305,26 +327,39 @@ export default function App() {
                     <h3 className="font-black text-2xl text-slate-900">{meeting.title} - <span className="text-slate-400">{meeting.date}</span></h3>
                   </div>
                   {isAdmin && (
-                    <div className="flex gap-2">
-                       <button onClick={() => setEditingMeeting(meeting)} className="p-2 text-slate-400 hover:text-blue-600 transition-colors"><Edit2 size={20}/></button>
-                       <button onClick={() => deleteMeeting(meeting.id)} className="p-2 text-slate-400 hover:text-red-600 transition-colors"><Trash2 size={20}/></button>
+                    <div className="flex gap-4">
+                       <button onClick={() => setIsAddingItemToMeeting(meeting.id)} className="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2"><Plus size={16}/> Add Item</button>
+                       <button onClick={() => setEditingMeeting(meeting)} className="p-2 text-slate-400 hover:text-blue-600"><Edit2 size={20}/></button>
+                       <button onClick={() => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meeting.id))} className="p-2 text-slate-400 hover:text-red-600"><Trash2 size={20}/></button>
                     </div>
                   )}
                 </div>
-                {meeting.items.map((item, idx) => (
-                  <div key={item.id} className="p-10 lg:p-14 border-b last:border-0">
+                {meeting.items?.map((item, idx) => (
+                  <div key={item.id} className="p-10 lg:p-14 border-b last:border-0 relative">
+                    {isAdmin && (
+                      <div className="absolute top-10 right-10 flex gap-2">
+                         <button onClick={() => setEditingItem({ meetingId: meeting.id, itemIndex: idx, itemData: item })} className="p-2 text-slate-300 hover:text-blue-500"><Edit2 size={16}/></button>
+                         <button onClick={() => deleteItem(meeting.id, idx)} className="p-2 text-slate-300 hover:text-red-500"><Trash2 size={16}/></button>
+                      </div>
+                    )}
                     <div className="flex flex-col lg:flex-row justify-between items-start mb-12 gap-10">
                       <div className="max-w-4xl">
                         <span className="text-[11px] font-black uppercase tracking-widest bg-blue-100 text-blue-700 px-4 py-1.5 rounded-full mb-5 inline-block">{item.category}</span>
                         <h4 className="text-3xl font-black text-slate-900 mb-5 leading-tight">{item.title}</h4>
                         <p className="text-slate-500 text-lg leading-relaxed font-medium">{item.description}</p>
                       </div>
-                      <button onClick={() => toggleItemStatus(meeting.id, idx)} disabled={!isAdmin} className={`min-w-[150px] px-8 py-4 rounded-[24px] text-xs font-black uppercase tracking-[0.2em] transition-all ${item.status === 'Passed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} ${isAdmin ? 'hover:scale-105 active:scale-95' : ''}`}>{item.status}</button>
+                      <div className={`min-w-[150px] px-8 py-4 rounded-[24px] text-xs font-black uppercase tracking-[0.2em] text-center ${
+                        item.status === 'Passed' ? 'bg-green-100 text-green-700' : 
+                        item.status === 'Failed' ? 'bg-red-100 text-red-700' : 
+                        'bg-amber-100 text-amber-700'
+                      }`}>
+                        {item.status}
+                      </div>
                     </div>
                     <div className="bg-slate-50/70 p-8 rounded-[40px] grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-6">
                       {commissioners.map(comm => (
-                        <div key={comm.id} className="text-center group/voter">
-                          <img src={comm.image} className="w-16 h-16 rounded-[20px] mx-auto object-cover border-4 border-white shadow-xl mb-3 transition-all group-hover/voter:scale-110" alt="" />
+                        <div key={comm.id} className="text-center">
+                          <img src={comm.image} className="w-16 h-16 rounded-[20px] mx-auto object-cover border-4 border-white shadow-xl mb-3" alt="" />
                           <p className="text-xs font-black text-slate-700 truncate mb-3">{comm.name.split(' ').pop()}</p>
                           {isAdmin ? (
                             <button 
@@ -342,7 +377,7 @@ export default function App() {
                               item.votes[comm.id] === 'No' ? 'text-red-600' : 'text-slate-400 italic'
                             }`}>
                               {item.votes[comm.id] === 'Yes' ? <CheckCircle size={12}/> : 
-                               item.votes[comm.id] === 'No' ? <XCircle size={12}/> : <MinusCircle size={12}/>} 
+                               item.votes[comm.id] === 'No' ? <XCircle size={12}/> : <Clock size={12}/>} 
                               {item.votes[comm.id] || "N/A"}
                             </div>
                           )}
@@ -356,67 +391,94 @@ export default function App() {
           </div>
         )}
 
-        {/* Modals */}
+        {/* --- MODALS --- */}
+
+        {/* Meeting Modal (Date/Title Only) */}
+        {(isAddingMeeting || editingMeeting) && (
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-50 flex items-center justify-center p-8 animate-in fade-in">
+            <div className="bg-white rounded-[56px] w-full max-w-2xl p-12 shadow-2xl">
+              <div className="flex justify-between items-center mb-10">
+                <h3 className="text-3xl font-black text-slate-900 tracking-tight">{editingMeeting ? "Edit Meeting Details" : "New Meeting Date"}</h3>
+                <button onClick={() => {setIsAddingMeeting(false); setEditingMeeting(null);}} className="text-slate-300 hover:text-slate-600"><X size={32}/></button>
+              </div>
+              <form onSubmit={handleMeetingSubmit} className="space-y-8">
+                <input name="date" type="date" required defaultValue={editingMeeting?.date} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
+                <input name="title" placeholder="Meeting Title (e.g. Regular Session)" required defaultValue={editingMeeting?.title} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold text-lg outline-none" />
+                <button type="submit" className="w-full bg-blue-600 text-white py-6 rounded-[32px] font-black text-xl hover:bg-blue-700 shadow-2xl">{editingMeeting ? "Update Meeting" : "Create Meeting Container"}</button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Item Modal (Individual Agenda Item) */}
+        {(isAddingItemToMeeting || editingItem) && (
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[60] flex items-center justify-center p-8 animate-in fade-in">
+            <div className="bg-white rounded-[56px] w-full max-w-2xl p-12 shadow-2xl">
+              <div className="flex justify-between items-center mb-10">
+                <h3 className="text-3xl font-black text-slate-900 tracking-tight">{editingItem ? "Edit Agenda Item" : "Add Agenda Item"}</h3>
+                <button onClick={() => {setIsAddingItemToMeeting(null); setEditingItem(null);}} className="text-slate-300 hover:text-slate-600"><X size={32}/></button>
+              </div>
+              <form onSubmit={handleItemSubmit} className="space-y-6">
+                <div className="grid grid-cols-2 gap-6">
+                   <div className="space-y-2">
+                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</label>
+                     <input name="category" placeholder="e.g. Finance" defaultValue={editingItem?.itemData.category} required className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none focus:border-blue-500" />
+                   </div>
+                   <div className="space-y-2">
+                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</label>
+                     <select name="status" defaultValue={editingItem?.itemData.status || "Passed"} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none">
+                       <option value="Passed">Passed</option>
+                       <option value="Failed">Failed</option>
+                       <option value="Tabled">Tabled</option>
+                     </select>
+                   </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Item Name</label>
+                  <input name="title" placeholder="Agenda Title" required defaultValue={editingItem?.itemData.title} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-lg outline-none" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Description</label>
+                  <textarea name="description" placeholder="Public summary..." rows="4" defaultValue={editingItem?.itemData.description} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-3xl text-lg outline-none"></textarea>
+                </div>
+                <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-[28px] font-black text-xl shadow-2xl">{editingItem ? "Update Item" : "Add Item to Date"}</button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Commissioner Modal */}
+        {(isAddingCommissioner || editingCommissioner) && (
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-50 flex items-center justify-center p-8 animate-in fade-in">
+            <div className="bg-white rounded-[56px] w-full max-w-md p-12 shadow-2xl">
+              <div className="flex justify-between items-center mb-10">
+                <h3 className="text-3xl font-black text-slate-900 tracking-tight">{editingCommissioner ? "Edit Member" : "New Member"}</h3>
+                <button onClick={() => {setIsAddingCommissioner(false); setEditingCommissioner(null);}} className="text-slate-300 hover:text-slate-600"><X size={32}/></button>
+              </div>
+              <form onSubmit={handleCommissionerSubmit} className="space-y-6">
+                <input name="name" placeholder="Full Name" required defaultValue={editingCommissioner?.name} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
+                <input name="district" placeholder="District" required defaultValue={editingCommissioner?.district} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
+                <input name="image" placeholder="Photo URL" defaultValue={editingCommissioner?.image} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
+                <input name="party" placeholder="Affiliation" defaultValue={editingCommissioner?.party} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
+                <button type="submit" className="w-full bg-orange-500 text-white py-6 rounded-[32px] font-black text-xl shadow-2xl">{editingCommissioner ? "Update Member" : "Add Member"}</button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Login Modal */}
         {isLoginModalOpen && (
-          <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
-            <div className="bg-white rounded-[48px] w-full max-w-md p-12 shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-2 bg-blue-600"></div>
+          <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[100] flex items-center justify-center p-6 animate-in fade-in">
+            <div className="bg-white rounded-[48px] w-full max-w-md p-12 shadow-2xl relative">
               <div className="flex justify-between items-center mb-10">
                 <h3 className="text-3xl font-black text-slate-900 tracking-tight">Admin Portal</h3>
-                <button onClick={() => setIsLoginModalOpen(false)} className="text-slate-300 hover:text-slate-600 transition-colors"><X size={32}/></button>
+                <button onClick={() => setIsLoginModalOpen(false)} className="text-slate-300 hover:text-slate-600"><X size={32}/></button>
               </div>
-              {loginError && (<div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600 text-sm font-bold animate-in shake duration-300"><AlertCircle size={20} /> {loginError}</div>)}
+              {loginError && (<div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600 text-sm font-bold"><AlertCircle size={20} /> {loginError}</div>)}
               <form onSubmit={handleLogin} className="space-y-6">
                 <input name="email" type="email" required placeholder="Email" className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-blue-500 font-bold" />
                 <input name="password" type="password" required placeholder="Password" className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-blue-500 font-bold" />
-                <button type="submit" disabled={isLoggingIn} className="w-full bg-slate-900 text-white py-6 rounded-[28px] font-black text-lg hover:bg-blue-600 transition-all shadow-2xl disabled:opacity-50">{isLoggingIn ? "Signing In..." : "Log In"}</button>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {(isAddingMeeting || editingMeeting) && (
-          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-50 flex items-center justify-center p-8 animate-in fade-in duration-300">
-            <div className="bg-white rounded-[56px] w-full max-w-2xl p-12 shadow-2xl">
-              <div className="flex justify-between items-center mb-10">
-                <h3 className="text-3xl font-black text-slate-900 tracking-tight">{editingMeeting ? "Edit Meeting" : "Log Meeting Entry"}</h3>
-                <button onClick={() => {setIsAddingMeeting(false); setEditingMeeting(null);}} className="text-slate-300 hover:text-slate-600 transition-colors"><X size={32}/></button>
-              </div>
-              <form onSubmit={handleMeetingSubmit} className="space-y-8">
-                <div className="grid grid-cols-2 gap-8">
-                  <input name="date" type="date" required defaultValue={editingMeeting?.date} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
-                  {!editingMeeting && (
-                    <select name="category" className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none">
-                      <option>Zoning</option><option>Finance</option><option>Infrastructure</option><option>Public Safety</option>
-                    </select>
-                  )}
-                </div>
-                <input name="title" placeholder="Meeting Title" required defaultValue={editingMeeting?.title} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold text-lg outline-none" />
-                {!editingMeeting && (
-                  <>
-                    <input name="itemTitle" placeholder="Agenda Item Name" required className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold text-lg outline-none" />
-                    <textarea name="description" placeholder="Short description..." rows="5" className="w-full p-6 bg-slate-50 border-2 border-slate-100 rounded-[32px] text-lg outline-none"></textarea>
-                  </>
-                )}
-                <button type="submit" className="w-full bg-blue-600 text-white py-6 rounded-[32px] font-black text-xl hover:bg-blue-700 transition-all shadow-2xl shadow-blue-500/40">{editingMeeting ? "Update Details" : "Save Decision"}</button>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {isAddingCommissioner && (
-          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-50 flex items-center justify-center p-8 animate-in fade-in duration-300">
-            <div className="bg-white rounded-[56px] w-full max-w-md p-12 shadow-2xl">
-              <div className="flex justify-between items-center mb-10">
-                <h3 className="text-3xl font-black text-slate-900 tracking-tight">New Member</h3>
-                <button onClick={() => setIsAddingCommissioner(false)} className="text-slate-300 hover:text-slate-600 transition-colors"><X size={32}/></button>
-              </div>
-              <form onSubmit={handleAddCommissioner} className="space-y-6">
-                <input name="name" placeholder="Full Name" required className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
-                <input name="district" placeholder="District" required className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
-                <input name="image" placeholder="Photo URL" className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
-                <input name="party" placeholder="Affiliation" className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
-                <button type="submit" className="w-full bg-orange-500 text-white py-6 rounded-[32px] font-black text-xl hover:bg-orange-600 shadow-2xl transition-all">Add Commissioner</button>
+                <button type="submit" disabled={isLoggingIn} className="w-full bg-slate-900 text-white py-6 rounded-[28px] font-black text-lg disabled:opacity-50">{isLoggingIn ? "Signing In..." : "Log In"}</button>
               </form>
             </div>
           </div>
