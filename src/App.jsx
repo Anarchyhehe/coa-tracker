@@ -52,7 +52,8 @@ import {
   Activity,
   FileText,
   Award,
-  CalendarDays
+  CalendarDays,
+  HelpCircle
 } from 'lucide-react';
 
 // --- FIREBASE CONFIGURATION ---
@@ -210,6 +211,7 @@ export default function App() {
     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meetingId), { items: updatedItems });
   };
 
+  // --- Smart Stats Calculation ---
   const dashboardStats = useMemo(() => {
     const allItems = meetings.flatMap(m => (m.items || []).map(i => ({ 
       ...i, 
@@ -218,7 +220,9 @@ export default function App() {
     })));
     
     let unanimousCount = 0;
-    allItems.forEach(item => {
+    const finishedItems = allItems.filter(i => i.status !== "Upcoming");
+
+    finishedItems.forEach(item => {
       const activeVotes = Object.entries(item.votes)
         .filter(([id]) => item.activeVoterIds.includes(id))
         .map(([_, v]) => v)
@@ -231,14 +235,14 @@ export default function App() {
 
     const catMap = {};
     allItems.forEach(item => {
-      if (!catMap[item.category]) catMap[item.category] = { name: item.category, Passed: 0, Failed: 0, Tabled: 0 };
+      if (!catMap[item.category]) catMap[item.category] = { name: item.category, Passed: 0, Failed: 0, Tabled: 0, Upcoming: 0 };
       catMap[item.category][item.status]++;
     });
 
     const commPerformance = commissioners.map(comm => {
       let yes = 0, no = 0, na = 0, totalItemsInOffice = 0;
       
-      allItems.forEach(item => {
+      finishedItems.forEach(item => {
         if (item.activeVoterIds.includes(comm.id)) {
           totalItemsInOffice++;
           const v = item.votes[comm.id];
@@ -262,8 +266,8 @@ export default function App() {
     return {
       totalMeetings: meetings.length,
       totalItems: allItems.length,
-      passRate: allItems.length > 0 ? Math.round((allItems.filter(i => i.status === "Passed").length / allItems.length) * 100) : 0,
-      unanimity: allItems.length > 0 ? Math.round((unanimousCount / allItems.length) * 100) : 0,
+      passRate: finishedItems.length > 0 ? Math.round((finishedItems.filter(i => i.status === "Passed").length / finishedItems.length) * 100) : 0,
+      unanimity: finishedItems.length > 0 ? Math.round((unanimousCount / finishedItems.length) * 100) : 0,
       categoryChart: Object.values(catMap),
       commPerformance
     };
@@ -326,7 +330,6 @@ export default function App() {
           </div>
           
           <div className="flex flex-wrap gap-3">
-            {/* Admin Controls - Visible in Header for Mobile Accessibility */}
             {isAdmin && activeTab === 'meetings' && (
               <button onClick={() => setIsAddingMeeting(true)} className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-black flex items-center gap-2 hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all text-sm"><Plus size={18} /> New Date</button>
             )}
@@ -334,7 +337,6 @@ export default function App() {
               <button onClick={() => setIsAddingCommissioner(true)} className="bg-orange-500 text-white px-5 py-2.5 rounded-xl font-black flex items-center gap-2 hover:bg-orange-600 shadow-lg shadow-orange-500/20 transition-all text-sm"><Plus size={18} /> New Member</button>
             )}
             
-            {/* Login Toggle for Mobile - Since Sidebar is Hidden */}
             <div className="md:hidden">
               {isAdmin ? (
                 <button onClick={handleLogout} className="bg-slate-800 text-white px-4 py-2.5 rounded-xl font-black flex items-center gap-2 text-sm"><LogOut size={16} /> Logout</button>
@@ -378,6 +380,7 @@ export default function App() {
                       <Bar dataKey="Passed" fill="#22c55e" radius={[4, 4, 0, 0]} />
                       <Bar dataKey="Failed" fill="#ef4444" radius={[4, 4, 0, 0]} />
                       <Bar dataKey="Tabled" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="Upcoming" fill="#94a3b8" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -506,42 +509,52 @@ export default function App() {
                           <h4 className="text-2xl md:text-3xl font-black text-slate-900 mb-5 leading-tight">{item.title}</h4>
                           <p className="text-slate-500 text-base md:text-lg leading-relaxed font-medium">{item.description}</p>
                         </div>
-                        <div className={`min-w-[150px] w-full md:w-auto px-8 py-4 rounded-[24px] text-xs font-black uppercase tracking-[0.2em] text-center ${
+                        <div className={`min-w-[150px] w-full md:w-auto px-8 py-4 rounded-[24px] text-xs font-black uppercase tracking-[0.2em] text-center flex items-center justify-center gap-2 ${
                           item.status === 'Passed' ? 'bg-green-100 text-green-700' : 
                           item.status === 'Failed' ? 'bg-red-100 text-red-700' : 
+                          item.status === 'Upcoming' ? 'bg-slate-200 text-slate-700' :
                           'bg-amber-100 text-amber-700'
                         }`}>
+                          {item.status === 'Upcoming' && <Clock size={14} />}
                           {item.status}
                         </div>
                       </div>
-                      <div className="bg-slate-50/70 p-6 md:p-8 rounded-[32px] md:rounded-[40px] grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-6">
-                        {activeComms.map(comm => (
-                          <div key={comm.id} className="text-center group/voter">
-                            <img src={comm.image} className="w-12 h-12 md:w-16 md:h-16 rounded-[16px] md:rounded-[20px] mx-auto object-cover border-4 border-white shadow-xl mb-3 transition-all group-hover/voter:scale-110" alt="" />
-                            <p className="text-[10px] md:text-xs font-black text-slate-700 truncate mb-3">{comm.name.split(' ').pop()}</p>
-                            {isAdmin ? (
-                              <button 
-                                onClick={() => updateVote(meeting.id, idx, comm.id, item.votes[comm.id])} 
-                                className={`text-[10px] font-black px-4 py-1.5 rounded-xl text-white shadow-md active:scale-90 w-full ${
-                                  item.votes[comm.id] === 'Yes' ? 'bg-green-600' : 
-                                  item.votes[comm.id] === 'No' ? 'bg-red-600' : 'bg-slate-400'
-                                }`}
-                              >
-                                {item.votes[comm.id] || "N/A"}
-                              </button>
-                            ) : (
-                              <div className={`text-[10px] font-black flex items-center justify-center gap-1 ${
-                                item.votes[comm.id] === 'Yes' ? 'text-green-600' : 
-                                item.votes[comm.id] === 'No' ? 'text-red-600' : 'text-slate-400 italic'
-                              }`}>
-                                {item.votes[comm.id] === 'Yes' ? <CheckCircle size={12}/> : 
-                                 item.votes[comm.id] === 'No' ? <XCircle size={12}/> : <Clock size={12}/>} 
-                                {item.votes[comm.id] || "N/A"}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
+                      
+                      {/* Only show votes if the item has actually happened */}
+                      {item.status !== 'Upcoming' ? (
+                        <div className="bg-slate-50/70 p-6 md:p-8 rounded-[32px] md:rounded-[40px] grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-6">
+                          {activeComms.map(comm => (
+                            <div key={comm.id} className="text-center group/voter">
+                              <img src={comm.image} className="w-12 h-12 md:w-16 md:h-16 rounded-[16px] md:rounded-[20px] mx-auto object-cover border-4 border-white shadow-xl mb-3 transition-all group-hover/voter:scale-110" alt="" />
+                              <p className="text-[10px] md:text-xs font-black text-slate-700 truncate mb-3">{comm.name.split(' ').pop()}</p>
+                              {isAdmin ? (
+                                <button 
+                                  onClick={() => updateVote(meeting.id, idx, comm.id, item.votes[comm.id])} 
+                                  className={`text-[10px] font-black px-4 py-1.5 rounded-xl text-white shadow-md active:scale-90 w-full ${
+                                    item.votes[comm.id] === 'Yes' ? 'bg-green-600' : 
+                                    item.votes[comm.id] === 'No' ? 'bg-red-600' : 'bg-slate-400'
+                                  }`}
+                                >
+                                  {item.votes[comm.id] || "N/A"}
+                                </button>
+                              ) : (
+                                <div className={`text-[10px] font-black flex items-center justify-center gap-1 ${
+                                  item.votes[comm.id] === 'Yes' ? 'text-green-600' : 
+                                  item.votes[comm.id] === 'No' ? 'text-red-600' : 'text-slate-400 italic'
+                                }`}>
+                                  {item.votes[comm.id] === 'Yes' ? <CheckCircle size={12}/> : 
+                                   item.votes[comm.id] === 'No' ? <XCircle size={12}/> : <Clock size={12}/>} 
+                                  {item.votes[comm.id] || "N/A"}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-8 bg-blue-50/50 rounded-[40px] border border-dashed border-blue-200 text-center">
+                           <p className="text-blue-600 font-bold text-sm">Meeting Pending. Voting records will be updated once the session concludes.</p>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -618,7 +631,8 @@ export default function App() {
                    </div>
                    <div className="space-y-2">
                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Final Outcome</label>
-                     <select name="status" defaultValue={editingItem?.itemData.status || "Passed"} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none">
+                     <select name="status" defaultValue={editingItem?.itemData.status || "Upcoming"} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none">
+                       <option value="Upcoming">Upcoming (Pending Meeting)</option>
                        <option value="Passed">Passed</option>
                        <option value="Failed">Failed</option>
                        <option value="Tabled">Tabled</option>
