@@ -181,7 +181,6 @@ export default function App() {
     const meeting = meetings.find(m => m.id === meetingId);
     if (!meeting) return;
 
-    // Use current meeting's active roster
     const rosterIds = meeting.activeCommissionerIds || commissioners.map(c => c.id);
 
     const newItemData = {
@@ -211,7 +210,6 @@ export default function App() {
     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meetingId), { items: updatedItems });
   };
 
-  // --- Smart Stats Calculation ---
   const dashboardStats = useMemo(() => {
     const allItems = meetings.flatMap(m => (m.items || []).map(i => ({ 
       ...i, 
@@ -221,7 +219,6 @@ export default function App() {
     
     let unanimousCount = 0;
     allItems.forEach(item => {
-      // Only check people who were active for this meeting
       const activeVotes = Object.entries(item.votes)
         .filter(([id]) => item.activeVoterIds.includes(id))
         .map(([_, v]) => v)
@@ -242,7 +239,6 @@ export default function App() {
       let yes = 0, no = 0, na = 0, totalItemsInOffice = 0;
       
       allItems.forEach(item => {
-        // Only count this item if the commissioner was part of the roster for this meeting
         if (item.activeVoterIds.includes(comm.id)) {
           totalItemsInOffice++;
           const v = item.votes[comm.id];
@@ -275,6 +271,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex font-sans">
+      {/* Sidebar - Hidden on mobile */}
       <aside className="w-64 bg-slate-900 text-white h-screen fixed hidden md:flex flex-col p-6 shadow-2xl z-30">
         <div className="flex items-center gap-3 mb-12 px-2">
           <div className="bg-blue-600 p-2.5 rounded-2xl shadow-lg shadow-blue-500/20"><Database size={24} /></div>
@@ -299,15 +296,52 @@ export default function App() {
         </div>
       </aside>
 
-      <main className="flex-1 md:ml-64 p-6 md:p-12 lg:p-16">
-        <header className="mb-14 flex flex-col md:row justify-between items-start md:items-center gap-8">
-          <div>
-            <h2 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight mb-2">{activeTab === 'dashboard' ? 'Insight Hub' : activeTab === 'commissioners' ? 'Representatives' : 'Archives'}</h2>
+      {/* Mobile Navigation Bar */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 flex justify-around items-center p-3 z-40 pb-safe shadow-lg">
+        {[
+          { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+          { id: 'commissioners', label: 'Members', icon: Users },
+          { id: 'meetings', label: 'Archive', icon: Calendar },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex flex-col items-center gap-1 transition-colors ${
+              activeTab === tab.id ? 'text-blue-600' : 'text-slate-400'
+            }`}
+          >
+            <tab.icon size={20} />
+            <span className="text-[10px] font-black uppercase tracking-tighter">{tab.label}</span>
+          </button>
+        ))}
+      </nav>
+
+      <main className="flex-1 md:ml-64 p-6 md:p-12 lg:p-16 pb-32 md:pb-12">
+        <header className="mb-14 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+          <div className="flex flex-col">
+            <h2 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight mb-2">
+              {activeTab === 'dashboard' ? 'Insight Hub' : activeTab === 'commissioners' ? 'Representatives' : 'Archives'}
+            </h2>
             <p className="text-slate-500 font-semibold text-lg">Public accountability for Alamogordo.</p>
           </div>
-          <div className="flex gap-4">
-            {isAdmin && activeTab === 'meetings' && (<button onClick={() => setIsAddingMeeting(true)} className="bg-blue-600 text-white px-6 py-3 rounded-[20px] font-black flex items-center gap-2 hover:bg-blue-700 shadow-xl shadow-blue-600/20"><Plus size={20} /> New Date</button>)}
-            {isAdmin && activeTab === 'commissioners' && (<button onClick={() => setIsAddingCommissioner(true)} className="bg-orange-500 text-white px-6 py-3 rounded-[20px] font-black flex items-center gap-2 hover:bg-orange-600 shadow-xl shadow-orange-500/20"><Plus size={20} /> New Member</button>)}
+          
+          <div className="flex flex-wrap gap-3">
+            {/* Admin Controls - Visible in Header for Mobile Accessibility */}
+            {isAdmin && activeTab === 'meetings' && (
+              <button onClick={() => setIsAddingMeeting(true)} className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-black flex items-center gap-2 hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all text-sm"><Plus size={18} /> New Date</button>
+            )}
+            {isAdmin && activeTab === 'commissioners' && (
+              <button onClick={() => setIsAddingCommissioner(true)} className="bg-orange-500 text-white px-5 py-2.5 rounded-xl font-black flex items-center gap-2 hover:bg-orange-600 shadow-lg shadow-orange-500/20 transition-all text-sm"><Plus size={18} /> New Member</button>
+            )}
+            
+            {/* Login Toggle for Mobile - Since Sidebar is Hidden */}
+            <div className="md:hidden">
+              {isAdmin ? (
+                <button onClick={handleLogout} className="bg-slate-800 text-white px-4 py-2.5 rounded-xl font-black flex items-center gap-2 text-sm"><LogOut size={16} /> Logout</button>
+              ) : (
+                <button onClick={() => setIsLoginModalOpen(true)} className="bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl font-black flex items-center gap-2 text-sm"><LogIn size={16} /> Admin Login</button>
+              )}
+            </div>
           </div>
         </header>
 
@@ -331,9 +365,9 @@ export default function App() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-              <div className="bg-white p-10 rounded-[44px] border border-slate-100 shadow-sm">
+              <div className="bg-white p-6 md:p-10 rounded-[44px] border border-slate-100 shadow-sm">
                 <h3 className="text-xl font-black text-slate-800 mb-8 flex items-center gap-2"><Filter size={20} className="text-blue-500" /> Outcome by Category</h3>
-                <div className="h-[340px] w-full">
+                <div className="h-[300px] md:h-[340px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={dashboardStats.categoryChart}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -349,14 +383,14 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="bg-white p-10 rounded-[44px] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+              <div className="bg-white p-6 md:p-10 rounded-[44px] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
                 <h3 className="text-xl font-black text-slate-800 mb-8 flex items-center gap-2"><Users size={20} className="text-blue-500" /> True Participation</h3>
-                <div className="flex-1 overflow-y-auto">
-                  <table className="w-full text-left text-sm">
+                <div className="flex-1 overflow-x-auto">
+                  <table className="w-full text-left text-sm min-w-[300px]">
                     <thead>
                       <tr className="border-b border-slate-50">
                         <th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Name</th>
-                        <th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">In Office Yes%</th>
+                        <th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Yes%</th>
                         <th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Attendance</th>
                       </tr>
                     </thead>
@@ -435,7 +469,7 @@ export default function App() {
           <div className="space-y-12">
             {meetings.map(meeting => (
               <div key={meeting.id} className="bg-white rounded-[56px] border border-slate-100 shadow-sm overflow-hidden mb-8">
-                <div className="p-10 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
+                <div className="p-6 md:p-10 bg-slate-50/50 border-b border-slate-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                   <div className="flex items-center gap-5">
                     <Calendar className="text-blue-600" size={24} />
                     <div>
@@ -452,14 +486,13 @@ export default function App() {
                   )}
                 </div>
                 {meeting.items?.map((item, idx) => {
-                  // Only show commissioners who were active for this meeting
                   const activeIds = meeting.activeCommissionerIds || commissioners.map(c => c.id);
                   const activeComms = commissioners.filter(c => activeIds.includes(c.id));
 
                   return (
-                    <div key={item.id} className="p-10 lg:p-14 border-b last:border-0 relative">
+                    <div key={item.id} className="p-6 md:p-14 border-b last:border-0 relative">
                       {isAdmin && (
-                        <div className="absolute top-10 right-10 flex gap-2">
+                        <div className="absolute top-6 md:top-10 right-6 md:right-10 flex gap-2">
                            <button onClick={() => setEditingItem({ meetingId: meeting.id, itemIndex: idx, itemData: item })} className="p-2 text-slate-300 hover:text-blue-500"><Edit2 size={16}/></button>
                            <button onClick={() => { if(window.confirm("Delete item?")) {
                               const updated = meeting.items.filter((_, i) => i !== idx);
@@ -470,10 +503,10 @@ export default function App() {
                       <div className="flex flex-col lg:flex-row justify-between items-start mb-12 gap-10">
                         <div className="max-w-4xl">
                           <span className="text-[11px] font-black uppercase tracking-widest bg-blue-100 text-blue-700 px-4 py-1.5 rounded-full mb-5 inline-block">{item.category}</span>
-                          <h4 className="text-3xl font-black text-slate-900 mb-5 leading-tight">{item.title}</h4>
-                          <p className="text-slate-500 text-lg leading-relaxed font-medium">{item.description}</p>
+                          <h4 className="text-2xl md:text-3xl font-black text-slate-900 mb-5 leading-tight">{item.title}</h4>
+                          <p className="text-slate-500 text-base md:text-lg leading-relaxed font-medium">{item.description}</p>
                         </div>
-                        <div className={`min-w-[150px] px-8 py-4 rounded-[24px] text-xs font-black uppercase tracking-[0.2em] text-center ${
+                        <div className={`min-w-[150px] w-full md:w-auto px-8 py-4 rounded-[24px] text-xs font-black uppercase tracking-[0.2em] text-center ${
                           item.status === 'Passed' ? 'bg-green-100 text-green-700' : 
                           item.status === 'Failed' ? 'bg-red-100 text-red-700' : 
                           'bg-amber-100 text-amber-700'
@@ -481,15 +514,15 @@ export default function App() {
                           {item.status}
                         </div>
                       </div>
-                      <div className="bg-slate-50/70 p-8 rounded-[40px] grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-6">
+                      <div className="bg-slate-50/70 p-6 md:p-8 rounded-[32px] md:rounded-[40px] grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-6">
                         {activeComms.map(comm => (
                           <div key={comm.id} className="text-center group/voter">
-                            <img src={comm.image} className="w-16 h-16 rounded-[20px] mx-auto object-cover border-4 border-white shadow-xl mb-3 transition-all group-hover/voter:scale-110" alt="" />
-                            <p className="text-xs font-black text-slate-700 truncate mb-3">{comm.name.split(' ').pop()}</p>
+                            <img src={comm.image} className="w-12 h-12 md:w-16 md:h-16 rounded-[16px] md:rounded-[20px] mx-auto object-cover border-4 border-white shadow-xl mb-3 transition-all group-hover/voter:scale-110" alt="" />
+                            <p className="text-[10px] md:text-xs font-black text-slate-700 truncate mb-3">{comm.name.split(' ').pop()}</p>
                             {isAdmin ? (
                               <button 
                                 onClick={() => updateVote(meeting.id, idx, comm.id, item.votes[comm.id])} 
-                                className={`text-[10px] font-black px-4 py-1.5 rounded-xl text-white shadow-md active:scale-90 ${
+                                className={`text-[10px] font-black px-4 py-1.5 rounded-xl text-white shadow-md active:scale-90 w-full ${
                                   item.votes[comm.id] === 'Yes' ? 'bg-green-600' : 
                                   item.votes[comm.id] === 'No' ? 'bg-red-600' : 'bg-slate-400'
                                 }`}
@@ -508,9 +541,6 @@ export default function App() {
                             )}
                           </div>
                         ))}
-                        {activeComms.length === 0 && (
-                          <div className="col-span-full py-4 text-center text-slate-400 italic text-xs uppercase tracking-widest">No active commissioners defined for this session.</div>
-                        )}
                       </div>
                     </div>
                   );
@@ -523,28 +553,27 @@ export default function App() {
         {/* --- MODALS --- */}
 
         {(isAddingMeeting || editingMeeting) && (
-          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-50 flex items-center justify-center p-8 animate-in fade-in">
-            <div className="bg-white rounded-[56px] w-full max-w-2xl p-12 shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 md:p-8 animate-in fade-in">
+            <div className="bg-white rounded-[32px] md:rounded-[56px] w-full max-w-2xl p-6 md:p-12 shadow-2xl max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-10">
-                <h3 className="text-3xl font-black text-slate-900 tracking-tight">{editingMeeting ? "Update Session Roster" : "New Meeting Date"}</h3>
+                <h3 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">{editingMeeting ? "Update Session Roster" : "New Meeting Date"}</h3>
                 <button onClick={() => {setIsAddingMeeting(false); setEditingMeeting(null);}} className="text-slate-300 hover:text-slate-600"><X size={32}/></button>
               </div>
               <form onSubmit={handleMeetingSubmit} className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date</label>
-                    <input name="date" type="date" required defaultValue={editingMeeting?.date} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
+                    <input name="date" type="date" required defaultValue={editingMeeting?.date} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-[20px] font-bold outline-none" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Title</label>
-                    <input name="title" placeholder="e.g. Regular Session" required defaultValue={editingMeeting?.title} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
+                    <input name="title" placeholder="e.g. Regular Session" required defaultValue={editingMeeting?.title} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-[20px] font-bold outline-none" />
                   </div>
                 </div>
 
-                <div className="bg-slate-50 p-8 rounded-[40px] border border-slate-100">
+                <div className="bg-slate-50 p-6 md:p-8 rounded-[32px] border border-slate-100">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Active Roster Selection</p>
-                  <p className="text-[11px] text-slate-500 font-bold mb-6">Select which commissioners were serving in office on this date:</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4">
                     {commissioners.map(comm => {
                       const isActive = editingMeeting?.activeCommissionerIds?.includes(comm.id) ?? true;
                       return (
@@ -568,23 +597,23 @@ export default function App() {
                   </div>
                 </div>
 
-                <button type="submit" className="w-full bg-blue-600 text-white py-6 rounded-[32px] font-black text-xl shadow-2xl">{editingMeeting ? "Update Session" : "Create Meeting Container"}</button>
+                <button type="submit" className="w-full bg-blue-600 text-white py-5 md:py-6 rounded-[24px] md:rounded-[32px] font-black text-lg md:text-xl shadow-2xl transition-transform active:scale-95">{editingMeeting ? "Update Session" : "Create Meeting Container"}</button>
               </form>
             </div>
           </div>
         )}
 
         {(isAddingItemToMeeting || editingItem) && (
-          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[60] flex items-center justify-center p-8 animate-in fade-in">
-            <div className="bg-white rounded-[56px] w-full max-w-2xl p-12 shadow-2xl">
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[60] flex items-center justify-center p-4 md:p-8 animate-in fade-in">
+            <div className="bg-white rounded-[32px] md:rounded-[56px] w-full max-w-2xl p-6 md:p-12 shadow-2xl max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-10">
-                <h3 className="text-3xl font-black text-slate-900 tracking-tight">{editingItem ? "Edit Agenda Item" : "Add Agenda Item"}</h3>
+                <h3 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">{editingItem ? "Edit Agenda Item" : "Add Agenda Item"}</h3>
                 <button onClick={() => {setIsAddingItemToMeeting(null); setEditingItem(null);}} className="text-slate-300 hover:text-slate-600"><X size={32}/></button>
               </div>
               <form onSubmit={handleItemSubmit} className="space-y-6">
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                    <div className="space-y-2">
-                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Category (Manual Entry)</label>
+                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</label>
                      <input name="category" placeholder="e.g. LEDA" defaultValue={editingItem?.itemData.category} required className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none focus:border-blue-500" />
                    </div>
                    <div className="space-y-2">
@@ -604,38 +633,38 @@ export default function App() {
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Public Summary</label>
                   <textarea name="description" placeholder="Description..." rows="4" defaultValue={editingItem?.itemData.description} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-3xl text-lg outline-none"></textarea>
                 </div>
-                <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-[28px] font-black text-xl shadow-2xl">Save Agenda Item</button>
+                <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-[24px] font-black text-xl shadow-2xl transition-transform active:scale-95">Save Agenda Item</button>
               </form>
             </div>
           </div>
         )}
 
         {(isAddingCommissioner || editingCommissioner) && (
-          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-50 flex items-center justify-center p-8 animate-in fade-in">
-            <div className="bg-white rounded-[56px] w-full max-w-2xl p-12 shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 md:p-8 animate-in fade-in">
+            <div className="bg-white rounded-[32px] md:rounded-[56px] w-full max-w-2xl p-6 md:p-12 shadow-2xl max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-10">
-                <h3 className="text-3xl font-black text-slate-900 tracking-tight">{editingCommissioner ? "Update Profile" : "New Member"}</h3>
+                <h3 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">{editingCommissioner ? "Update Profile" : "New Member"}</h3>
                 <button onClick={() => {setIsAddingCommissioner(false); setEditingCommissioner(null);}} className="text-slate-300 hover:text-slate-600"><X size={32}/></button>
               </div>
               <form onSubmit={handleCommissionerSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <input name="name" placeholder="Full Name" required defaultValue={editingCommissioner?.name} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
-                  <input name="district" placeholder="District (e.g. District 5)" required defaultValue={editingCommissioner?.district} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
-                  <input name="party" placeholder="Party / Affiliation" defaultValue={editingCommissioner?.party} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
-                  <input name="currentTerm" placeholder="Current Term (e.g. 1st Term)" defaultValue={editingCommissioner?.currentTerm} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
+                  <input name="name" placeholder="Full Name" required defaultValue={editingCommissioner?.name} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none" />
+                  <input name="district" placeholder="District (e.g. District 5)" required defaultValue={editingCommissioner?.district} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none" />
+                  <input name="party" placeholder="Party / Affiliation" defaultValue={editingCommissioner?.party} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none" />
+                  <input name="currentTerm" placeholder="Current Term" defaultValue={editingCommissioner?.currentTerm} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none" />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Assumed Office</label>
-                    <input name="assumedOffice" type="date" defaultValue={editingCommissioner?.assumedOffice} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
+                    <input name="assumedOffice" type="date" defaultValue={editingCommissioner?.assumedOffice} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Term Expires</label>
-                    <input name="termExpires" type="date" defaultValue={editingCommissioner?.termExpires} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
+                    <input name="termExpires" type="date" defaultValue={editingCommissioner?.termExpires} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none" />
                   </div>
                 </div>
-                <input name="image" placeholder="Photo URL" defaultValue={editingCommissioner?.image} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
-                <button type="submit" className="w-full bg-orange-500 text-white py-6 rounded-[32px] font-black text-xl shadow-2xl">Update Member Archive</button>
+                <input name="image" placeholder="Photo URL" defaultValue={editingCommissioner?.image} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none" />
+                <button type="submit" className="w-full bg-orange-500 text-white py-5 rounded-[24px] font-black text-xl shadow-2xl transition-transform active:scale-95">Update Member</button>
               </form>
             </div>
           </div>
@@ -643,16 +672,16 @@ export default function App() {
 
         {isLoginModalOpen && (
           <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[100] flex items-center justify-center p-6 animate-in fade-in">
-            <div className="bg-white rounded-[48px] w-full max-w-md p-12 shadow-2xl relative">
+            <div className="bg-white rounded-[40px] w-full max-w-md p-10 shadow-2xl relative">
               <div className="flex justify-between items-center mb-10">
                 <h3 className="text-3xl font-black text-slate-900 tracking-tight">Admin Portal</h3>
                 <button onClick={() => setIsLoginModalOpen(false)} className="text-slate-300 hover:text-slate-600"><X size={32}/></button>
               </div>
               {loginError && (<div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600 text-sm font-bold"><AlertCircle size={20} /> {loginError}</div>)}
               <form onSubmit={handleLogin} className="space-y-6">
-                <input name="email" type="email" required placeholder="Email" className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-blue-500 font-bold" />
-                <input name="password" type="password" required placeholder="Password" className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-blue-500 font-bold" />
-                <button type="submit" disabled={isLoggingIn} className="w-full bg-slate-900 text-white py-6 rounded-[28px] font-black text-lg disabled:opacity-50">{isLoggingIn ? "Signing In..." : "Log In"}</button>
+                <input name="email" type="email" required placeholder="Email" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-blue-500 font-bold" />
+                <input name="password" type="password" required placeholder="Password" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-blue-500 font-bold" />
+                <button type="submit" disabled={isLoggingIn} className="w-full bg-slate-900 text-white py-5 rounded-[24px] font-black text-lg disabled:opacity-50 transition-transform active:scale-95">{isLoggingIn ? "Signing In..." : "Log In"}</button>
               </form>
             </div>
           </div>
