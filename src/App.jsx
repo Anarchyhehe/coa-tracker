@@ -21,7 +21,13 @@ import {
   Pie, 
   Cell,
   Tooltip, 
-  ResponsiveContainer
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Legend
 } from 'recharts';
 import { 
   Plus, 
@@ -41,10 +47,13 @@ import {
   LogIn,
   AlertCircle,
   Edit2,
-  Clock
+  Clock,
+  TrendingUp,
+  Activity,
+  FileText
 } from 'lucide-react';
 
-// --- UPDATED FIREBASE CONFIGURATION ---
+// --- FIREBASE CONFIGURATION ---
 const firebaseConfig = {
   apiKey: "AIzaSyDPE8NTz21mQ13hVBlJc9FA7fp8ngY9h3w",
   authDomain: "coa-commission-tracker.firebaseapp.com",
@@ -72,15 +81,14 @@ export default function App() {
   const [editingMeeting, setEditingMeeting] = useState(null);
   const [isAddingCommissioner, setIsAddingCommissioner] = useState(false);
   const [editingCommissioner, setEditingCommissioner] = useState(null);
-  const [editingItem, setEditingItem] = useState(null); // { meetingId, itemIndex, itemData }
-  const [isAddingItemToMeeting, setIsAddingItemToMeeting] = useState(null); // meetingId
+  const [editingItem, setEditingItem] = useState(null);
+  const [isAddingItemToMeeting, setIsAddingItemToMeeting] = useState(null);
 
   const [loginError, setLoginError] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const isAdmin = user && !user.isAnonymous;
 
-  // --- Auth Setup ---
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (!currentUser) {
@@ -92,10 +100,8 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // --- Real-time Data Listeners ---
   useEffect(() => {
     if (!user) return;
-
     const commRef = collection(db, 'artifacts', appId, 'public', 'data', 'commissioners');
     const unsubscribeComm = onSnapshot(commRef, (snapshot) => {
       setCommissioners(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
@@ -106,31 +112,25 @@ export default function App() {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setMeetings(data.sort((a, b) => new Date(b.date) - new Date(a.date)));
     }, (err) => console.error("Firestore error:", err));
-
     return () => {
       unsubscribeComm();
       unsubscribeMeet();
     };
   }, [user]);
 
-  // --- Actions ---
+  // --- Auth & Actions ---
   const handleLogin = async (e) => {
     e.preventDefault();
-    setLoginError("");
-    setIsLoggingIn(true);
+    setLoginError(""); setIsLoggingIn(true);
     try {
       await signInWithEmailAndPassword(auth, e.target.email.value, e.target.password.value);
       setIsLoginModalOpen(false);
-    } catch (err) {
-      setLoginError("Invalid credentials.");
-    } finally {
-      setIsLoggingIn(false);
-    }
+    } catch (err) { setLoginError("Invalid credentials."); }
+    finally { setIsLoggingIn(false); }
   };
 
   const handleLogout = async () => { await signOut(auth); };
 
-  // --- Commissioner Management ---
   const handleCommissionerSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
@@ -140,7 +140,6 @@ export default function App() {
       image: formData.get('image') || `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.get('name'))}&background=random`,
       party: formData.get('party') || "Non-partisan"
     };
-
     if (editingCommissioner) {
       await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'commissioners', editingCommissioner.id), data);
       setEditingCommissioner(null);
@@ -150,36 +149,25 @@ export default function App() {
     }
   };
 
-  // --- Meeting Management ---
   const handleMeetingSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const meetingData = {
-      date: formData.get('date'),
-      title: formData.get('title'),
-    };
-
+    const meetingData = { date: formData.get('date'), title: formData.get('title') };
     if (editingMeeting) {
       await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', editingMeeting.id), meetingData);
       setEditingMeeting(null);
     } else {
-      // New meeting starts with zero items
-      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'meetings'), {
-        ...meetingData,
-        items: []
-      });
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'meetings'), { ...meetingData, items: [] });
       setIsAddingMeeting(false);
     }
   };
 
-  // --- Item Management ---
   const handleItemSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const meetingId = isAddingItemToMeeting || editingItem?.meetingId;
     const meeting = meetings.find(m => m.id === meetingId);
     if (!meeting) return;
-
     const newItemData = {
       id: editingItem ? editingItem.itemData.id : crypto.randomUUID(),
       title: formData.get('title'),
@@ -188,24 +176,11 @@ export default function App() {
       status: formData.get('status'),
       votes: editingItem ? editingItem.itemData.votes : Object.fromEntries(commissioners.map(c => [c.id, "Yes"]))
     };
-
     let updatedItems = [...(meeting.items || [])];
-    if (editingItem) {
-      updatedItems[editingItem.itemIndex] = newItemData;
-    } else {
-      updatedItems.push(newItemData);
-    }
-
+    if (editingItem) updatedItems[editingItem.itemIndex] = newItemData;
+    else updatedItems.push(newItemData);
     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meetingId), { items: updatedItems });
-    setEditingItem(null);
-    setIsAddingItemToMeeting(null);
-  };
-
-  const deleteItem = async (meetingId, itemIndex) => {
-    if (!window.confirm("Delete this agenda item?")) return;
-    const meeting = meetings.find(m => m.id === meetingId);
-    const updatedItems = meeting.items.filter((_, i) => i !== itemIndex);
-    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meetingId), { items: updatedItems });
+    setEditingItem(null); setIsAddingItemToMeeting(null);
   };
 
   const updateVote = async (meetingId, itemIndex, commId, current) => {
@@ -219,19 +194,59 @@ export default function App() {
     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meetingId), { items: updatedItems });
   };
 
-  const stats = useMemo(() => {
+  // --- Pertinent Stats Calculation ---
+  const dashboardStats = useMemo(() => {
     const allItems = meetings.flatMap(m => (m.items || []).map(i => ({ ...i, date: m.date })));
-    const counts = {};
-    allItems.forEach(i => counts[i.category] = (counts[i.category] || 0) + 1);
+    
+    // 1. Unanimity Tracking
+    let unanimousCount = 0;
+    allItems.forEach(item => {
+      const activeVotes = Object.values(item.votes).filter(v => v !== "N/A");
+      if (activeVotes.length > 0 && activeVotes.every(v => v === activeVotes[0])) {
+        unanimousCount++;
+      }
+    });
+
+    // 2. Category Performance
+    const catMap = {};
+    allItems.forEach(item => {
+      if (!catMap[item.category]) catMap[item.category] = { name: item.category, Passed: 0, Failed: 0, Tabled: 0 };
+      catMap[item.category][item.status]++;
+    });
+
+    // 3. Commissioner Participation
+    const commPerformance = commissioners.map(comm => {
+      let yes = 0, no = 0, na = 0;
+      allItems.forEach(item => {
+        const v = item.votes[comm.id];
+        if (v === "Yes") yes++;
+        else if (v === "No") no++;
+        else na++;
+      });
+      const totalActive = yes + no;
+      return {
+        id: comm.id,
+        name: comm.name,
+        district: comm.district,
+        yesRate: totalActive > 0 ? Math.round((yes / totalActive) * 100) : 0,
+        participation: allItems.length > 0 ? Math.round(((allItems.length - na) / allItems.length) * 100) : 0,
+        votes: { yes, no, na }
+      };
+    });
+
     return {
-      total: allItems.length,
-      passed: allItems.filter(i => i.status === "Passed").length,
-      chart: Object.entries(counts).map(([name, value]) => ({ name, value }))
+      totalMeetings: meetings.length,
+      totalItems: allItems.length,
+      passRate: allItems.length > 0 ? Math.round((allItems.filter(i => i.status === "Passed").length / allItems.length) * 100) : 0,
+      unanimity: allItems.length > 0 ? Math.round((unanimousCount / allItems.length) * 100) : 0,
+      categoryChart: Object.values(catMap),
+      commPerformance
     };
-  }, [meetings]);
+  }, [meetings, commissioners]);
 
   return (
     <div className="min-h-screen bg-slate-50 flex font-sans">
+      {/* Sidebar */}
       <aside className="w-64 bg-slate-900 text-white h-screen fixed hidden md:flex flex-col p-6 shadow-2xl z-30">
         <div className="flex items-center gap-3 mb-12 px-2">
           <div className="bg-blue-600 p-2.5 rounded-2xl shadow-lg shadow-blue-500/20"><Database size={24} /></div>
@@ -259,43 +274,100 @@ export default function App() {
       <main className="flex-1 md:ml-64 p-6 md:p-12 lg:p-16">
         <header className="mb-14 flex flex-col md:row justify-between items-start md:items-center gap-8">
           <div>
-            <h2 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight mb-2">{activeTab === 'dashboard' ? 'City Pulse' : activeTab === 'commissioners' ? 'Representatives' : 'Archives'}</h2>
-            <p className="text-slate-500 font-semibold text-lg">Civic accountability for Alamogordo.</p>
+            <h2 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight mb-2">{activeTab === 'dashboard' ? 'Insight Hub' : activeTab === 'commissioners' ? 'Representatives' : 'Archives'}</h2>
+            <p className="text-slate-500 font-semibold text-lg">Public accountability for Alamogordo.</p>
           </div>
           <div className="flex gap-4">
-            {isAdmin && activeTab === 'meetings' && (<button onClick={() => setIsAddingMeeting(true)} className="bg-blue-600 text-white px-6 py-3 rounded-[20px] font-black flex items-center gap-2 hover:bg-blue-700 shadow-xl shadow-blue-600/20 transition-all"><Plus size={20} /> New Date</button>)}
-            {isAdmin && activeTab === 'commissioners' && (<button onClick={() => setIsAddingCommissioner(true)} className="bg-orange-500 text-white px-6 py-3 rounded-[20px] font-black flex items-center gap-2 hover:bg-orange-600 shadow-xl shadow-orange-500/20 transition-all"><Plus size={20} /> New Member</button>)}
+            {isAdmin && activeTab === 'meetings' && (<button onClick={() => setIsAddingMeeting(true)} className="bg-blue-600 text-white px-6 py-3 rounded-[20px] font-black flex items-center gap-2 hover:bg-blue-700 transition-all shadow-xl shadow-blue-600/20"><Plus size={20} /> New Date</button>)}
+            {isAdmin && activeTab === 'commissioners' && (<button onClick={() => setIsAddingCommissioner(true)} className="bg-orange-500 text-white px-6 py-3 rounded-[20px] font-black flex items-center gap-2 hover:bg-orange-600 shadow-xl shadow-orange-500/20"><Plus size={20} /> New Member</button>)}
           </div>
         </header>
 
+        {/* Dashboard View */}
         {activeTab === 'dashboard' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-            <div className="bg-white p-10 rounded-[44px] border border-slate-100 shadow-sm flex flex-col">
-              <h3 className="text-xl font-black text-slate-800 mb-10 flex items-center gap-2"><Filter size={20} className="text-blue-500" /> Topics</h3>
-              <div className="h-[340px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={stats.chart} cx="50%" cy="50%" innerRadius={80} outerRadius={110} paddingAngle={10} dataKey="value" stroke="none">
-                      {stats.chart.map((e, i) => <Cell key={i} fill={['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][i % 5]} />)}
-                    </Pie>
-                    <Tooltip contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.15)' }} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+          <div className="space-y-10 animate-in fade-in duration-700">
+            {/* Top Stat Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[
+                { label: 'Meetings', value: dashboardStats.totalMeetings, icon: Calendar, color: 'text-blue-600', bg: 'bg-blue-50' },
+                { label: 'Agenda Items', value: dashboardStats.totalItems, icon: FileText, color: 'text-orange-600', bg: 'bg-orange-50' },
+                { label: 'Pass Rate', value: `${dashboardStats.passRate}%`, icon: TrendingUp, color: 'text-green-600', bg: 'bg-green-50' },
+                { label: 'Unanimous', value: `${dashboardStats.unanimity}%`, icon: Activity, color: 'text-purple-600', bg: 'bg-purple-50' }
+              ].map((stat, i) => (
+                <div key={i} className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm flex items-center gap-4">
+                  <div className={`${stat.bg} ${stat.color} p-4 rounded-2xl`}><stat.icon size={24}/></div>
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</p>
+                    <p className="text-2xl font-black text-slate-900">{stat.value}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="flex flex-col gap-10">
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+              {/* Category Breakdown Chart */}
               <div className="bg-white p-10 rounded-[44px] border border-slate-100 shadow-sm">
-                <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4">Total Decisions</p>
-                <p className="text-7xl font-black text-slate-900 tabular-nums">{stats.total}</p>
+                <h3 className="text-xl font-black text-slate-800 mb-8 flex items-center gap-2"><Filter size={20} className="text-blue-500" /> Outcome by Category</h3>
+                <div className="h-[340px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={dashboardStats.categoryChart}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 700, fill: '#64748b'}} />
+                      <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 700, fill: '#64748b'}} />
+                      <Tooltip contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }} />
+                      <Legend iconType="circle" />
+                      <Bar dataKey="Passed" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="Failed" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="Tabled" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
-              <div className="bg-white p-10 rounded-[44px] border border-slate-100 shadow-sm">
-                <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4">Pass Rate</p>
-                <p className="text-7xl font-black text-green-600 tabular-nums">{stats.total > 0 ? Math.round((stats.passed / stats.total) * 100) : 0}%</p>
+
+              {/* Commissioner Participation Table */}
+              <div className="bg-white p-10 rounded-[44px] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+                <h3 className="text-xl font-black text-slate-800 mb-8 flex items-center gap-2"><Users size={20} className="text-blue-500" /> Voting Participation</h3>
+                <div className="flex-1 overflow-y-auto">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="border-b border-slate-50">
+                        <th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Commissioner</th>
+                        <th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Yes Rate</th>
+                        <th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Attendance</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {dashboardStats.commPerformance.map((comm) => (
+                        <tr key={comm.id} className="group">
+                          <td className="py-4">
+                            <p className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{comm.name}</p>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase">{comm.district}</p>
+                          </td>
+                          <td className="py-4">
+                            <span className={`text-sm font-black ${comm.yesRate > 75 ? 'text-green-600' : 'text-slate-600'}`}>{comm.yesRate}%</span>
+                          </td>
+                          <td className="py-4">
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 h-1.5 bg-slate-100 rounded-full max-w-[60px] overflow-hidden">
+                                <div className="h-full bg-blue-500 rounded-full" style={{ width: `${comm.participation}%` }}></div>
+                              </div>
+                              <span className="text-xs font-bold text-slate-500">{comm.participation}%</span>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {dashboardStats.commPerformance.length === 0 && (
+                     <p className="py-10 text-center text-slate-300 italic text-sm">Add commissioners to see stats.</p>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         )}
 
+        {/* Commissioners View */}
         {activeTab === 'commissioners' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {commissioners.map(comm => (
@@ -303,7 +375,7 @@ export default function App() {
                 {isAdmin && (
                   <div className="absolute top-6 right-6 flex gap-2">
                     <button onClick={() => setEditingCommissioner(comm)} className="p-2 text-slate-200 hover:text-blue-500"><Edit2 size={18}/></button>
-                    <button onClick={() => deleteCommissioner(comm.id)} className="p-2 text-slate-200 hover:text-red-500"><Trash2 size={18}/></button>
+                    <button onClick={() => { if(window.confirm("Remove member?")) deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'commissioners', comm.id))}} className="p-2 text-slate-200 hover:text-red-500"><Trash2 size={18}/></button>
                   </div>
                 )}
                 <div className="flex flex-col items-center text-center">
@@ -317,6 +389,7 @@ export default function App() {
           </div>
         )}
 
+        {/* Meeting Archive View */}
         {activeTab === 'meetings' && (
           <div className="space-y-12">
             {meetings.map(meeting => (
@@ -330,7 +403,7 @@ export default function App() {
                     <div className="flex gap-4">
                        <button onClick={() => setIsAddingItemToMeeting(meeting.id)} className="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2"><Plus size={16}/> Add Item</button>
                        <button onClick={() => setEditingMeeting(meeting)} className="p-2 text-slate-400 hover:text-blue-600"><Edit2 size={20}/></button>
-                       <button onClick={() => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meeting.id))} className="p-2 text-slate-400 hover:text-red-600"><Trash2 size={20}/></button>
+                       <button onClick={() => { if(window.confirm("Delete meeting?")) deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meeting.id))}} className="p-2 text-slate-400 hover:text-red-600"><Trash2 size={20}/></button>
                     </div>
                   )}
                 </div>
@@ -339,7 +412,10 @@ export default function App() {
                     {isAdmin && (
                       <div className="absolute top-10 right-10 flex gap-2">
                          <button onClick={() => setEditingItem({ meetingId: meeting.id, itemIndex: idx, itemData: item })} className="p-2 text-slate-300 hover:text-blue-500"><Edit2 size={16}/></button>
-                         <button onClick={() => deleteItem(meeting.id, idx)} className="p-2 text-slate-300 hover:text-red-500"><Trash2 size={16}/></button>
+                         <button onClick={() => { if(window.confirm("Delete item?")) {
+                            const updated = meeting.items.filter((_, i) => i !== idx);
+                            updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meeting.id), { items: updated });
+                         }}} className="p-2 text-slate-300 hover:text-red-500"><Trash2 size={16}/></button>
                       </div>
                     )}
                     <div className="flex flex-col lg:flex-row justify-between items-start mb-12 gap-10">
@@ -358,8 +434,8 @@ export default function App() {
                     </div>
                     <div className="bg-slate-50/70 p-8 rounded-[40px] grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-6">
                       {commissioners.map(comm => (
-                        <div key={comm.id} className="text-center">
-                          <img src={comm.image} className="w-16 h-16 rounded-[20px] mx-auto object-cover border-4 border-white shadow-xl mb-3" alt="" />
+                        <div key={comm.id} className="text-center group/voter">
+                          <img src={comm.image} className="w-16 h-16 rounded-[20px] mx-auto object-cover border-4 border-white shadow-xl mb-3 transition-all group-hover/voter:scale-110" alt="" />
                           <p className="text-xs font-black text-slate-700 truncate mb-3">{comm.name.split(' ').pop()}</p>
                           {isAdmin ? (
                             <button 
@@ -393,7 +469,6 @@ export default function App() {
 
         {/* --- MODALS --- */}
 
-        {/* Meeting Modal (Date/Title Only) */}
         {(isAddingMeeting || editingMeeting) && (
           <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-50 flex items-center justify-center p-8 animate-in fade-in">
             <div className="bg-white rounded-[56px] w-full max-w-2xl p-12 shadow-2xl">
@@ -404,13 +479,12 @@ export default function App() {
               <form onSubmit={handleMeetingSubmit} className="space-y-8">
                 <input name="date" type="date" required defaultValue={editingMeeting?.date} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
                 <input name="title" placeholder="Meeting Title (e.g. Regular Session)" required defaultValue={editingMeeting?.title} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold text-lg outline-none" />
-                <button type="submit" className="w-full bg-blue-600 text-white py-6 rounded-[32px] font-black text-xl hover:bg-blue-700 shadow-2xl">{editingMeeting ? "Update Meeting" : "Create Meeting Container"}</button>
+                <button type="submit" className="w-full bg-blue-600 text-white py-6 rounded-[32px] font-black text-xl shadow-2xl">{editingMeeting ? "Update Meeting" : "Create Date"}</button>
               </form>
             </div>
           </div>
         )}
 
-        {/* Item Modal (Individual Agenda Item) */}
         {(isAddingItemToMeeting || editingItem) && (
           <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[60] flex items-center justify-center p-8 animate-in fade-in">
             <div className="bg-white rounded-[56px] w-full max-w-2xl p-12 shadow-2xl">
@@ -441,13 +515,12 @@ export default function App() {
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Description</label>
                   <textarea name="description" placeholder="Public summary..." rows="4" defaultValue={editingItem?.itemData.description} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-3xl text-lg outline-none"></textarea>
                 </div>
-                <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-[28px] font-black text-xl shadow-2xl">{editingItem ? "Update Item" : "Add Item to Date"}</button>
+                <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-[28px] font-black text-xl shadow-2xl">Save Item</button>
               </form>
             </div>
           </div>
         )}
 
-        {/* Commissioner Modal */}
         {(isAddingCommissioner || editingCommissioner) && (
           <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-50 flex items-center justify-center p-8 animate-in fade-in">
             <div className="bg-white rounded-[56px] w-full max-w-md p-12 shadow-2xl">
@@ -460,13 +533,12 @@ export default function App() {
                 <input name="district" placeholder="District" required defaultValue={editingCommissioner?.district} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
                 <input name="image" placeholder="Photo URL" defaultValue={editingCommissioner?.image} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
                 <input name="party" placeholder="Affiliation" defaultValue={editingCommissioner?.party} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
-                <button type="submit" className="w-full bg-orange-500 text-white py-6 rounded-[32px] font-black text-xl shadow-2xl">{editingCommissioner ? "Update Member" : "Add Member"}</button>
+                <button type="submit" className="w-full bg-orange-500 text-white py-6 rounded-[32px] font-black text-xl shadow-2xl">Save Member</button>
               </form>
             </div>
           </div>
         )}
 
-        {/* Login Modal */}
         {isLoginModalOpen && (
           <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[100] flex items-center justify-center p-6 animate-in fade-in">
             <div className="bg-white rounded-[48px] w-full max-w-md p-12 shadow-2xl relative">
