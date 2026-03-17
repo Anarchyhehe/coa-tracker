@@ -50,7 +50,9 @@ import {
   Clock,
   TrendingUp,
   Activity,
-  FileText
+  FileText,
+  Award,
+  CalendarDays
 } from 'lucide-react';
 
 // --- FIREBASE CONFIGURATION ---
@@ -138,7 +140,10 @@ export default function App() {
       name: formData.get('name'),
       district: formData.get('district'),
       image: formData.get('image') || `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.get('name'))}&background=random`,
-      party: formData.get('party') || "Non-partisan"
+      party: formData.get('party') || "Non-partisan",
+      assumedOffice: formData.get('assumedOffice'),
+      termExpires: formData.get('termExpires'),
+      currentTerm: formData.get('currentTerm')
     };
     if (editingCommissioner) {
       await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'commissioners', editingCommissioner.id), data);
@@ -152,7 +157,14 @@ export default function App() {
   const handleMeetingSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const meetingData = { date: formData.get('date'), title: formData.get('title') };
+    const activeIds = commissioners.filter(c => formData.get(`active-${c.id}`)).map(c => c.id);
+    
+    const meetingData = { 
+      date: formData.get('date'), 
+      title: formData.get('title'),
+      activeCommissionerIds: activeIds
+    };
+
     if (editingMeeting) {
       await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', editingMeeting.id), meetingData);
       setEditingMeeting(null);
@@ -168,14 +180,19 @@ export default function App() {
     const meetingId = isAddingItemToMeeting || editingItem?.meetingId;
     const meeting = meetings.find(m => m.id === meetingId);
     if (!meeting) return;
+
+    // Use current meeting's active roster
+    const rosterIds = meeting.activeCommissionerIds || commissioners.map(c => c.id);
+
     const newItemData = {
       id: editingItem ? editingItem.itemData.id : crypto.randomUUID(),
       title: formData.get('title'),
       category: formData.get('category'),
       description: formData.get('description'),
       status: formData.get('status'),
-      votes: editingItem ? editingItem.itemData.votes : Object.fromEntries(commissioners.map(c => [c.id, "Yes"]))
+      votes: editingItem ? editingItem.itemData.votes : Object.fromEntries(rosterIds.map(id => [id, "Yes"]))
     };
+
     let updatedItems = [...(meeting.items || [])];
     if (editingItem) updatedItems[editingItem.itemIndex] = newItemData;
     else updatedItems.push(newItemData);
@@ -194,42 +211,54 @@ export default function App() {
     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meetingId), { items: updatedItems });
   };
 
-  // --- Pertinent Stats Calculation ---
+  // --- Smart Stats Calculation ---
   const dashboardStats = useMemo(() => {
-    const allItems = meetings.flatMap(m => (m.items || []).map(i => ({ ...i, date: m.date })));
+    const allItems = meetings.flatMap(m => (m.items || []).map(i => ({ 
+      ...i, 
+      date: m.date, 
+      activeVoterIds: m.activeCommissionerIds || commissioners.map(c => c.id) 
+    })));
     
-    // 1. Unanimity Tracking
     let unanimousCount = 0;
     allItems.forEach(item => {
-      const activeVotes = Object.values(item.votes).filter(v => v !== "N/A");
+      // Only check people who were active for this meeting
+      const activeVotes = Object.entries(item.votes)
+        .filter(([id]) => item.activeVoterIds.includes(id))
+        .map(([_, v]) => v)
+        .filter(v => v !== "N/A");
+
       if (activeVotes.length > 0 && activeVotes.every(v => v === activeVotes[0])) {
         unanimousCount++;
       }
     });
 
-    // 2. Category Performance
     const catMap = {};
     allItems.forEach(item => {
       if (!catMap[item.category]) catMap[item.category] = { name: item.category, Passed: 0, Failed: 0, Tabled: 0 };
       catMap[item.category][item.status]++;
     });
 
-    // 3. Commissioner Participation
     const commPerformance = commissioners.map(comm => {
-      let yes = 0, no = 0, na = 0;
+      let yes = 0, no = 0, na = 0, totalItemsInOffice = 0;
+      
       allItems.forEach(item => {
-        const v = item.votes[comm.id];
-        if (v === "Yes") yes++;
-        else if (v === "No") no++;
-        else na++;
+        // Only count this item if the commissioner was part of the roster for this meeting
+        if (item.activeVoterIds.includes(comm.id)) {
+          totalItemsInOffice++;
+          const v = item.votes[comm.id];
+          if (v === "Yes") yes++;
+          else if (v === "No") no++;
+          else na++;
+        }
       });
+
       const totalActive = yes + no;
       return {
         id: comm.id,
         name: comm.name,
         district: comm.district,
         yesRate: totalActive > 0 ? Math.round((yes / totalActive) * 100) : 0,
-        participation: allItems.length > 0 ? Math.round(((allItems.length - na) / allItems.length) * 100) : 0,
+        participation: totalItemsInOffice > 0 ? Math.round(((totalItemsInOffice - na) / totalItemsInOffice) * 100) : 0,
         votes: { yes, no, na }
       };
     });
@@ -246,7 +275,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex font-sans">
-      {/* Sidebar */}
       <aside className="w-64 bg-slate-900 text-white h-screen fixed hidden md:flex flex-col p-6 shadow-2xl z-30">
         <div className="flex items-center gap-3 mb-12 px-2">
           <div className="bg-blue-600 p-2.5 rounded-2xl shadow-lg shadow-blue-500/20"><Database size={24} /></div>
@@ -278,15 +306,13 @@ export default function App() {
             <p className="text-slate-500 font-semibold text-lg">Public accountability for Alamogordo.</p>
           </div>
           <div className="flex gap-4">
-            {isAdmin && activeTab === 'meetings' && (<button onClick={() => setIsAddingMeeting(true)} className="bg-blue-600 text-white px-6 py-3 rounded-[20px] font-black flex items-center gap-2 hover:bg-blue-700 transition-all shadow-xl shadow-blue-600/20"><Plus size={20} /> New Date</button>)}
+            {isAdmin && activeTab === 'meetings' && (<button onClick={() => setIsAddingMeeting(true)} className="bg-blue-600 text-white px-6 py-3 rounded-[20px] font-black flex items-center gap-2 hover:bg-blue-700 shadow-xl shadow-blue-600/20"><Plus size={20} /> New Date</button>)}
             {isAdmin && activeTab === 'commissioners' && (<button onClick={() => setIsAddingCommissioner(true)} className="bg-orange-500 text-white px-6 py-3 rounded-[20px] font-black flex items-center gap-2 hover:bg-orange-600 shadow-xl shadow-orange-500/20"><Plus size={20} /> New Member</button>)}
           </div>
         </header>
 
-        {/* Dashboard View */}
         {activeTab === 'dashboard' && (
           <div className="space-y-10 animate-in fade-in duration-700">
-            {/* Top Stat Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {[
                 { label: 'Meetings', value: dashboardStats.totalMeetings, icon: Calendar, color: 'text-blue-600', bg: 'bg-blue-50' },
@@ -305,7 +331,6 @@ export default function App() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-              {/* Category Breakdown Chart */}
               <div className="bg-white p-10 rounded-[44px] border border-slate-100 shadow-sm">
                 <h3 className="text-xl font-black text-slate-800 mb-8 flex items-center gap-2"><Filter size={20} className="text-blue-500" /> Outcome by Category</h3>
                 <div className="h-[340px] w-full">
@@ -324,72 +349,88 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Commissioner Participation Table */}
               <div className="bg-white p-10 rounded-[44px] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
-                <h3 className="text-xl font-black text-slate-800 mb-8 flex items-center gap-2"><Users size={20} className="text-blue-500" /> Voting Participation</h3>
+                <h3 className="text-xl font-black text-slate-800 mb-8 flex items-center gap-2"><Users size={20} className="text-blue-500" /> True Participation</h3>
                 <div className="flex-1 overflow-y-auto">
-                  <table className="w-full text-left">
+                  <table className="w-full text-left text-sm">
                     <thead>
                       <tr className="border-b border-slate-50">
-                        <th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Commissioner</th>
-                        <th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Yes Rate</th>
-                        <th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Attendance</th>
+                        <th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Name</th>
+                        <th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">In Office Yes%</th>
+                        <th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Attendance</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
                       {dashboardStats.commPerformance.map((comm) => (
-                        <tr key={comm.id} className="group">
+                        <tr key={comm.id} className="group hover:bg-slate-50/50 transition-colors">
                           <td className="py-4">
                             <p className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{comm.name}</p>
                             <p className="text-[10px] text-slate-400 font-bold uppercase">{comm.district}</p>
                           </td>
-                          <td className="py-4">
-                            <span className={`text-sm font-black ${comm.yesRate > 75 ? 'text-green-600' : 'text-slate-600'}`}>{comm.yesRate}%</span>
+                          <td className="py-4 text-center">
+                            <span className={`font-black ${comm.yesRate > 75 ? 'text-green-600' : 'text-slate-600'}`}>{comm.yesRate}%</span>
                           </td>
-                          <td className="py-4">
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 h-1.5 bg-slate-100 rounded-full max-w-[60px] overflow-hidden">
-                                <div className="h-full bg-blue-500 rounded-full" style={{ width: `${comm.participation}%` }}></div>
-                              </div>
-                              <span className="text-xs font-bold text-slate-500">{comm.participation}%</span>
-                            </div>
+                          <td className="py-4 text-right">
+                             <span className="text-xs font-bold text-slate-500">{comm.participation}%</span>
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
-                  {dashboardStats.commPerformance.length === 0 && (
-                     <p className="py-10 text-center text-slate-300 italic text-sm">Add commissioners to see stats.</p>
-                  )}
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Commissioners View */}
         {activeTab === 'commissioners' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in duration-500">
             {commissioners.map(comm => (
-              <div key={comm.id} className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm relative group hover:shadow-2xl transition-all duration-500">
+              <div key={comm.id} className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm relative group hover:shadow-2xl transition-all duration-500 overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/50 rounded-bl-[100px] -mr-10 -mt-10 transition-all group-hover:bg-blue-100/50"></div>
                 {isAdmin && (
-                  <div className="absolute top-6 right-6 flex gap-2">
-                    <button onClick={() => setEditingCommissioner(comm)} className="p-2 text-slate-200 hover:text-blue-500"><Edit2 size={18}/></button>
-                    <button onClick={() => { if(window.confirm("Remove member?")) deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'commissioners', comm.id))}} className="p-2 text-slate-200 hover:text-red-500"><Trash2 size={18}/></button>
+                  <div className="absolute top-6 right-6 flex gap-2 z-10">
+                    <button onClick={() => setEditingCommissioner(comm)} className="p-2 text-slate-300 hover:text-blue-500 transition-colors"><Edit2 size={18}/></button>
+                    <button onClick={() => { if(window.confirm("Remove member?")) deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'commissioners', comm.id))}} className="p-2 text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={18}/></button>
                   </div>
                 )}
-                <div className="flex flex-col items-center text-center">
-                  <img src={comm.image} className="w-28 h-28 rounded-[32px] object-cover border-8 border-slate-50 mb-6 shadow-lg" alt="" />
-                  <h3 className="font-black text-2xl text-slate-900 mb-1">{comm.name}</h3>
-                  <p className="text-base text-slate-500 font-bold mb-4">{comm.district}</p>
-                  <span className="px-4 py-1.5 bg-blue-50 text-blue-600 text-xs font-black uppercase rounded-full tracking-widest">{comm.party}</span>
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-8 relative z-0">
+                  <img src={comm.image} className="w-32 h-32 rounded-[32px] object-cover border-8 border-slate-50 shadow-xl" alt="" />
+                  <div className="flex-1 text-center sm:text-left">
+                    <div className="mb-4">
+                      <h3 className="font-black text-2xl text-slate-900 mb-1 leading-tight">{comm.name}</h3>
+                      <p className="text-blue-600 font-bold uppercase text-sm tracking-widest">{comm.district}</p>
+                      <span className="text-[10px] font-black text-slate-400 uppercase">{comm.party}</span>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 flex items-center gap-3">
+                        <Award size={16} className="text-orange-500" />
+                        <div>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Current Term</p>
+                          <p className="text-xs font-bold text-slate-700">{comm.currentTerm || "Not Set"}</p>
+                        </div>
+                      </div>
+                      <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 flex items-center gap-3">
+                        <CalendarDays size={16} className="text-blue-500" />
+                        <div>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Assumed Office</p>
+                          <p className="text-xs font-bold text-slate-700">{comm.assumedOffice || "Not Set"}</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4 p-3 bg-slate-900 text-white rounded-2xl flex justify-between items-center px-5">
+                       <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Term Expires</p>
+                       <p className="text-xs font-bold">{comm.termExpires || "TBD"}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
 
-        {/* Meeting Archive View */}
         {activeTab === 'meetings' && (
           <div className="space-y-12">
             {meetings.map(meeting => (
@@ -397,71 +438,83 @@ export default function App() {
                 <div className="p-10 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
                   <div className="flex items-center gap-5">
                     <Calendar className="text-blue-600" size={24} />
-                    <h3 className="font-black text-2xl text-slate-900">{meeting.title} - <span className="text-slate-400">{meeting.date}</span></h3>
+                    <div>
+                      <h3 className="font-black text-2xl text-slate-900 leading-none mb-2">{meeting.title}</h3>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{meeting.date}</p>
+                    </div>
                   </div>
                   {isAdmin && (
                     <div className="flex gap-4">
-                       <button onClick={() => setIsAddingItemToMeeting(meeting.id)} className="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2"><Plus size={16}/> Add Item</button>
+                       <button onClick={() => setIsAddingItemToMeeting(meeting.id)} className="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-transform hover:scale-105"><Plus size={16}/> Add Item</button>
                        <button onClick={() => setEditingMeeting(meeting)} className="p-2 text-slate-400 hover:text-blue-600"><Edit2 size={20}/></button>
                        <button onClick={() => { if(window.confirm("Delete meeting?")) deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meeting.id))}} className="p-2 text-slate-400 hover:text-red-600"><Trash2 size={20}/></button>
                     </div>
                   )}
                 </div>
-                {meeting.items?.map((item, idx) => (
-                  <div key={item.id} className="p-10 lg:p-14 border-b last:border-0 relative">
-                    {isAdmin && (
-                      <div className="absolute top-10 right-10 flex gap-2">
-                         <button onClick={() => setEditingItem({ meetingId: meeting.id, itemIndex: idx, itemData: item })} className="p-2 text-slate-300 hover:text-blue-500"><Edit2 size={16}/></button>
-                         <button onClick={() => { if(window.confirm("Delete item?")) {
-                            const updated = meeting.items.filter((_, i) => i !== idx);
-                            updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meeting.id), { items: updated });
-                         }}} className="p-2 text-slate-300 hover:text-red-500"><Trash2 size={16}/></button>
-                      </div>
-                    )}
-                    <div className="flex flex-col lg:flex-row justify-between items-start mb-12 gap-10">
-                      <div className="max-w-4xl">
-                        <span className="text-[11px] font-black uppercase tracking-widest bg-blue-100 text-blue-700 px-4 py-1.5 rounded-full mb-5 inline-block">{item.category}</span>
-                        <h4 className="text-3xl font-black text-slate-900 mb-5 leading-tight">{item.title}</h4>
-                        <p className="text-slate-500 text-lg leading-relaxed font-medium">{item.description}</p>
-                      </div>
-                      <div className={`min-w-[150px] px-8 py-4 rounded-[24px] text-xs font-black uppercase tracking-[0.2em] text-center ${
-                        item.status === 'Passed' ? 'bg-green-100 text-green-700' : 
-                        item.status === 'Failed' ? 'bg-red-100 text-red-700' : 
-                        'bg-amber-100 text-amber-700'
-                      }`}>
-                        {item.status}
-                      </div>
-                    </div>
-                    <div className="bg-slate-50/70 p-8 rounded-[40px] grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-6">
-                      {commissioners.map(comm => (
-                        <div key={comm.id} className="text-center group/voter">
-                          <img src={comm.image} className="w-16 h-16 rounded-[20px] mx-auto object-cover border-4 border-white shadow-xl mb-3 transition-all group-hover/voter:scale-110" alt="" />
-                          <p className="text-xs font-black text-slate-700 truncate mb-3">{comm.name.split(' ').pop()}</p>
-                          {isAdmin ? (
-                            <button 
-                              onClick={() => updateVote(meeting.id, idx, comm.id, item.votes[comm.id])} 
-                              className={`text-[10px] font-black px-4 py-1.5 rounded-xl text-white shadow-md active:scale-90 ${
-                                item.votes[comm.id] === 'Yes' ? 'bg-green-600' : 
-                                item.votes[comm.id] === 'No' ? 'bg-red-600' : 'bg-slate-400'
-                              }`}
-                            >
-                              {item.votes[comm.id] || "N/A"}
-                            </button>
-                          ) : (
-                            <div className={`text-[10px] font-black flex items-center justify-center gap-1 ${
-                              item.votes[comm.id] === 'Yes' ? 'text-green-600' : 
-                              item.votes[comm.id] === 'No' ? 'text-red-600' : 'text-slate-400 italic'
-                            }`}>
-                              {item.votes[comm.id] === 'Yes' ? <CheckCircle size={12}/> : 
-                               item.votes[comm.id] === 'No' ? <XCircle size={12}/> : <Clock size={12}/>} 
-                              {item.votes[comm.id] || "N/A"}
-                            </div>
-                          )}
+                {meeting.items?.map((item, idx) => {
+                  // Only show commissioners who were active for this meeting
+                  const activeIds = meeting.activeCommissionerIds || commissioners.map(c => c.id);
+                  const activeComms = commissioners.filter(c => activeIds.includes(c.id));
+
+                  return (
+                    <div key={item.id} className="p-10 lg:p-14 border-b last:border-0 relative">
+                      {isAdmin && (
+                        <div className="absolute top-10 right-10 flex gap-2">
+                           <button onClick={() => setEditingItem({ meetingId: meeting.id, itemIndex: idx, itemData: item })} className="p-2 text-slate-300 hover:text-blue-500"><Edit2 size={16}/></button>
+                           <button onClick={() => { if(window.confirm("Delete item?")) {
+                              const updated = meeting.items.filter((_, i) => i !== idx);
+                              updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meeting.id), { items: updated });
+                           }}} className="p-2 text-slate-300 hover:text-red-500"><Trash2 size={16}/></button>
                         </div>
-                      ))}
+                      )}
+                      <div className="flex flex-col lg:flex-row justify-between items-start mb-12 gap-10">
+                        <div className="max-w-4xl">
+                          <span className="text-[11px] font-black uppercase tracking-widest bg-blue-100 text-blue-700 px-4 py-1.5 rounded-full mb-5 inline-block">{item.category}</span>
+                          <h4 className="text-3xl font-black text-slate-900 mb-5 leading-tight">{item.title}</h4>
+                          <p className="text-slate-500 text-lg leading-relaxed font-medium">{item.description}</p>
+                        </div>
+                        <div className={`min-w-[150px] px-8 py-4 rounded-[24px] text-xs font-black uppercase tracking-[0.2em] text-center ${
+                          item.status === 'Passed' ? 'bg-green-100 text-green-700' : 
+                          item.status === 'Failed' ? 'bg-red-100 text-red-700' : 
+                          'bg-amber-100 text-amber-700'
+                        }`}>
+                          {item.status}
+                        </div>
+                      </div>
+                      <div className="bg-slate-50/70 p-8 rounded-[40px] grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-6">
+                        {activeComms.map(comm => (
+                          <div key={comm.id} className="text-center group/voter">
+                            <img src={comm.image} className="w-16 h-16 rounded-[20px] mx-auto object-cover border-4 border-white shadow-xl mb-3 transition-all group-hover/voter:scale-110" alt="" />
+                            <p className="text-xs font-black text-slate-700 truncate mb-3">{comm.name.split(' ').pop()}</p>
+                            {isAdmin ? (
+                              <button 
+                                onClick={() => updateVote(meeting.id, idx, comm.id, item.votes[comm.id])} 
+                                className={`text-[10px] font-black px-4 py-1.5 rounded-xl text-white shadow-md active:scale-90 ${
+                                  item.votes[comm.id] === 'Yes' ? 'bg-green-600' : 
+                                  item.votes[comm.id] === 'No' ? 'bg-red-600' : 'bg-slate-400'
+                                }`}
+                              >
+                                {item.votes[comm.id] || "N/A"}
+                              </button>
+                            ) : (
+                              <div className={`text-[10px] font-black flex items-center justify-center gap-1 ${
+                                item.votes[comm.id] === 'Yes' ? 'text-green-600' : 
+                                item.votes[comm.id] === 'No' ? 'text-red-600' : 'text-slate-400 italic'
+                              }`}>
+                                {item.votes[comm.id] === 'Yes' ? <CheckCircle size={12}/> : 
+                                 item.votes[comm.id] === 'No' ? <XCircle size={12}/> : <Clock size={12}/>} 
+                                {item.votes[comm.id] || "N/A"}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        {activeComms.length === 0 && (
+                          <div className="col-span-full py-4 text-center text-slate-400 italic text-xs uppercase tracking-widest">No active commissioners defined for this session.</div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ))}
           </div>
@@ -471,15 +524,51 @@ export default function App() {
 
         {(isAddingMeeting || editingMeeting) && (
           <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-50 flex items-center justify-center p-8 animate-in fade-in">
-            <div className="bg-white rounded-[56px] w-full max-w-2xl p-12 shadow-2xl">
+            <div className="bg-white rounded-[56px] w-full max-w-2xl p-12 shadow-2xl max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-10">
-                <h3 className="text-3xl font-black text-slate-900 tracking-tight">{editingMeeting ? "Edit Meeting Details" : "New Meeting Date"}</h3>
+                <h3 className="text-3xl font-black text-slate-900 tracking-tight">{editingMeeting ? "Update Session Roster" : "New Meeting Date"}</h3>
                 <button onClick={() => {setIsAddingMeeting(false); setEditingMeeting(null);}} className="text-slate-300 hover:text-slate-600"><X size={32}/></button>
               </div>
               <form onSubmit={handleMeetingSubmit} className="space-y-8">
-                <input name="date" type="date" required defaultValue={editingMeeting?.date} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
-                <input name="title" placeholder="Meeting Title (e.g. Regular Session)" required defaultValue={editingMeeting?.title} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold text-lg outline-none" />
-                <button type="submit" className="w-full bg-blue-600 text-white py-6 rounded-[32px] font-black text-xl shadow-2xl">{editingMeeting ? "Update Meeting" : "Create Date"}</button>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date</label>
+                    <input name="date" type="date" required defaultValue={editingMeeting?.date} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Title</label>
+                    <input name="title" placeholder="e.g. Regular Session" required defaultValue={editingMeeting?.title} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 p-8 rounded-[40px] border border-slate-100">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Active Roster Selection</p>
+                  <p className="text-[11px] text-slate-500 font-bold mb-6">Select which commissioners were serving in office on this date:</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {commissioners.map(comm => {
+                      const isActive = editingMeeting?.activeCommissionerIds?.includes(comm.id) ?? true;
+                      return (
+                        <label key={comm.id} className="flex items-center gap-3 p-4 bg-white rounded-2xl border border-slate-100 cursor-pointer hover:border-blue-500 transition-all">
+                          <input 
+                            type="checkbox" 
+                            name={`active-${comm.id}`} 
+                            defaultChecked={isActive}
+                            className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500" 
+                          />
+                          <div className="flex items-center gap-2">
+                             <img src={comm.image} className="w-8 h-8 rounded-full object-cover" alt="" />
+                             <div>
+                               <p className="text-xs font-bold text-slate-900">{comm.name}</p>
+                               <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">{comm.district}</p>
+                             </div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <button type="submit" className="w-full bg-blue-600 text-white py-6 rounded-[32px] font-black text-xl shadow-2xl">{editingMeeting ? "Update Session" : "Create Meeting Container"}</button>
               </form>
             </div>
           </div>
@@ -495,11 +584,11 @@ export default function App() {
               <form onSubmit={handleItemSubmit} className="space-y-6">
                 <div className="grid grid-cols-2 gap-6">
                    <div className="space-y-2">
-                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</label>
-                     <input name="category" placeholder="e.g. Finance" defaultValue={editingItem?.itemData.category} required className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none focus:border-blue-500" />
+                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Category (Manual Entry)</label>
+                     <input name="category" placeholder="e.g. LEDA" defaultValue={editingItem?.itemData.category} required className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none focus:border-blue-500" />
                    </div>
                    <div className="space-y-2">
-                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</label>
+                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Final Outcome</label>
                      <select name="status" defaultValue={editingItem?.itemData.status || "Passed"} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none">
                        <option value="Passed">Passed</option>
                        <option value="Failed">Failed</option>
@@ -508,14 +597,14 @@ export default function App() {
                    </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Item Name</label>
-                  <input name="title" placeholder="Agenda Title" required defaultValue={editingItem?.itemData.title} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-lg outline-none" />
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Agenda Title</label>
+                  <input name="title" placeholder="Official Title" required defaultValue={editingItem?.itemData.title} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-lg outline-none" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Description</label>
-                  <textarea name="description" placeholder="Public summary..." rows="4" defaultValue={editingItem?.itemData.description} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-3xl text-lg outline-none"></textarea>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Public Summary</label>
+                  <textarea name="description" placeholder="Description..." rows="4" defaultValue={editingItem?.itemData.description} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-3xl text-lg outline-none"></textarea>
                 </div>
-                <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-[28px] font-black text-xl shadow-2xl">Save Item</button>
+                <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-[28px] font-black text-xl shadow-2xl">Save Agenda Item</button>
               </form>
             </div>
           </div>
@@ -523,17 +612,30 @@ export default function App() {
 
         {(isAddingCommissioner || editingCommissioner) && (
           <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-50 flex items-center justify-center p-8 animate-in fade-in">
-            <div className="bg-white rounded-[56px] w-full max-w-md p-12 shadow-2xl">
+            <div className="bg-white rounded-[56px] w-full max-w-2xl p-12 shadow-2xl max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-10">
-                <h3 className="text-3xl font-black text-slate-900 tracking-tight">{editingCommissioner ? "Edit Member" : "New Member"}</h3>
+                <h3 className="text-3xl font-black text-slate-900 tracking-tight">{editingCommissioner ? "Update Profile" : "New Member"}</h3>
                 <button onClick={() => {setIsAddingCommissioner(false); setEditingCommissioner(null);}} className="text-slate-300 hover:text-slate-600"><X size={32}/></button>
               </div>
               <form onSubmit={handleCommissionerSubmit} className="space-y-6">
-                <input name="name" placeholder="Full Name" required defaultValue={editingCommissioner?.name} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
-                <input name="district" placeholder="District" required defaultValue={editingCommissioner?.district} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <input name="name" placeholder="Full Name" required defaultValue={editingCommissioner?.name} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
+                  <input name="district" placeholder="District (e.g. District 5)" required defaultValue={editingCommissioner?.district} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
+                  <input name="party" placeholder="Party / Affiliation" defaultValue={editingCommissioner?.party} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
+                  <input name="currentTerm" placeholder="Current Term (e.g. 1st Term)" defaultValue={editingCommissioner?.currentTerm} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Assumed Office</label>
+                    <input name="assumedOffice" type="date" defaultValue={editingCommissioner?.assumedOffice} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Term Expires</label>
+                    <input name="termExpires" type="date" defaultValue={editingCommissioner?.termExpires} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
+                  </div>
+                </div>
                 <input name="image" placeholder="Photo URL" defaultValue={editingCommissioner?.image} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
-                <input name="party" placeholder="Affiliation" defaultValue={editingCommissioner?.party} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] font-bold outline-none" />
-                <button type="submit" className="w-full bg-orange-500 text-white py-6 rounded-[32px] font-black text-xl shadow-2xl">Save Member</button>
+                <button type="submit" className="w-full bg-orange-500 text-white py-6 rounded-[32px] font-black text-xl shadow-2xl">Update Member Archive</button>
               </form>
             </div>
           </div>
