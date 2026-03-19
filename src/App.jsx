@@ -53,7 +53,8 @@ import {
   FileText,
   Award,
   CalendarDays,
-  HelpCircle
+  Youtube,
+  ExternalLink
 } from 'lucide-react';
 
 // --- FIREBASE CONFIGURATION ---
@@ -163,6 +164,7 @@ export default function App() {
     const meetingData = { 
       date: formData.get('date'), 
       title: formData.get('title'),
+      youtubeUrl: formData.get('youtubeUrl'),
       activeCommissionerIds: activeIds
     };
 
@@ -190,6 +192,7 @@ export default function App() {
       category: formData.get('category'),
       description: formData.get('description'),
       status: formData.get('status'),
+      timestampUrl: formData.get('timestampUrl'),
       votes: editingItem ? editingItem.itemData.votes : Object.fromEntries(rosterIds.map(id => [id, "Yes"]))
     };
 
@@ -211,7 +214,6 @@ export default function App() {
     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meetingId), { items: updatedItems });
   };
 
-  // --- Smart Stats Calculation ---
   const dashboardStats = useMemo(() => {
     const allItems = meetings.flatMap(m => (m.items || []).map(i => ({ 
       ...i, 
@@ -275,7 +277,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex font-sans">
-      {/* Sidebar - Hidden on mobile */}
       <aside className="w-64 bg-slate-900 text-white h-screen fixed hidden md:flex flex-col p-6 shadow-2xl z-30">
         <div className="flex items-center gap-3 mb-12 px-2">
           <div className="bg-blue-600 p-2.5 rounded-2xl shadow-lg shadow-blue-500/20"><Database size={24} /></div>
@@ -300,20 +301,13 @@ export default function App() {
         </div>
       </aside>
 
-      {/* Mobile Navigation Bar */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 flex justify-around items-center p-3 z-40 pb-safe shadow-lg">
         {[
           { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
           { id: 'commissioners', label: 'Members', icon: Users },
           { id: 'meetings', label: 'Archive', icon: Calendar },
         ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex flex-col items-center gap-1 transition-colors ${
-              activeTab === tab.id ? 'text-blue-600' : 'text-slate-400'
-            }`}
-          >
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex flex-col items-center gap-1 transition-colors ${activeTab === tab.id ? 'text-blue-600' : 'text-slate-400'}`}>
             <tab.icon size={20} />
             <span className="text-[10px] font-black uppercase tracking-tighter">{tab.label}</span>
           </button>
@@ -323,27 +317,13 @@ export default function App() {
       <main className="flex-1 md:ml-64 p-6 md:p-12 lg:p-16 pb-32 md:pb-12">
         <header className="mb-14 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
           <div className="flex flex-col">
-            <h2 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight mb-2">
-              {activeTab === 'dashboard' ? 'Insight Hub' : activeTab === 'commissioners' ? 'Representatives' : 'Archives'}
-            </h2>
+            <h2 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight mb-2">{activeTab === 'dashboard' ? 'Insight Hub' : activeTab === 'commissioners' ? 'Representatives' : 'Archives'}</h2>
             <p className="text-slate-500 font-semibold text-lg">Public accountability for Alamogordo.</p>
           </div>
-          
           <div className="flex flex-wrap gap-3">
-            {isAdmin && activeTab === 'meetings' && (
-              <button onClick={() => setIsAddingMeeting(true)} className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-black flex items-center gap-2 hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all text-sm"><Plus size={18} /> New Date</button>
-            )}
-            {isAdmin && activeTab === 'commissioners' && (
-              <button onClick={() => setIsAddingCommissioner(true)} className="bg-orange-500 text-white px-5 py-2.5 rounded-xl font-black flex items-center gap-2 hover:bg-orange-600 shadow-lg shadow-orange-500/20 transition-all text-sm"><Plus size={18} /> New Member</button>
-            )}
-            
-            <div className="md:hidden">
-              {isAdmin ? (
-                <button onClick={handleLogout} className="bg-slate-800 text-white px-4 py-2.5 rounded-xl font-black flex items-center gap-2 text-sm"><LogOut size={16} /> Logout</button>
-              ) : (
-                <button onClick={() => setIsLoginModalOpen(true)} className="bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl font-black flex items-center gap-2 text-sm"><LogIn size={16} /> Admin Login</button>
-              )}
-            </div>
+            {isAdmin && activeTab === 'meetings' && (<button onClick={() => setIsAddingMeeting(true)} className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-black flex items-center gap-2 hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all text-sm"><Plus size={18} /> New Date</button>)}
+            {isAdmin && activeTab === 'commissioners' && (<button onClick={() => setIsAddingCommissioner(true)} className="bg-orange-500 text-white px-5 py-2.5 rounded-xl font-black flex items-center gap-2 hover:bg-orange-600 shadow-lg shadow-orange-500/20 transition-all text-sm"><Plus size={18} /> New Member</button>)}
+            <div className="md:hidden">{isAdmin ? (<button onClick={handleLogout} className="bg-slate-800 text-white px-4 py-2.5 rounded-xl font-black flex items-center gap-2 text-sm"><LogOut size={16} /> Logout</button>) : (<button onClick={() => setIsLoginModalOpen(true)} className="bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl font-black flex items-center gap-2 text-sm"><LogIn size={16} /> Admin Login</button>)}</div>
           </div>
         </header>
 
@@ -365,7 +345,6 @@ export default function App() {
                 </div>
               ))}
             </div>
-
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
               <div className="bg-white p-6 md:p-10 rounded-[44px] border border-slate-100 shadow-sm">
                 <h3 className="text-xl font-black text-slate-800 mb-8 flex items-center gap-2"><Filter size={20} className="text-blue-500" /> Outcome by Category</h3>
@@ -385,7 +364,6 @@ export default function App() {
                   </ResponsiveContainer>
                 </div>
               </div>
-
               <div className="bg-white p-6 md:p-10 rounded-[44px] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
                 <h3 className="text-xl font-black text-slate-800 mb-8 flex items-center gap-2"><Users size={20} className="text-blue-500" /> True Participation</h3>
                 <div className="flex-1 overflow-x-auto">
@@ -400,16 +378,9 @@ export default function App() {
                     <tbody className="divide-y divide-slate-50">
                       {dashboardStats.commPerformance.map((comm) => (
                         <tr key={comm.id} className="group hover:bg-slate-50/50 transition-colors">
-                          <td className="py-4">
-                            <p className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{comm.name}</p>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase">{comm.district}</p>
-                          </td>
-                          <td className="py-4 text-center">
-                            <span className={`font-black ${comm.yesRate > 75 ? 'text-green-600' : 'text-slate-600'}`}>{comm.yesRate}%</span>
-                          </td>
-                          <td className="py-4 text-right">
-                             <span className="text-xs font-bold text-slate-500">{comm.participation}%</span>
-                          </td>
+                          <td className="py-4"><p className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{comm.name}</p><p className="text-[10px] text-slate-400 font-bold uppercase">{comm.district}</p></td>
+                          <td className="py-4 text-center"><span className={`font-black ${comm.yesRate > 75 ? 'text-green-600' : 'text-slate-600'}`}>{comm.yesRate}%</span></td>
+                          <td className="py-4 text-right"><span className="text-xs font-bold text-slate-500">{comm.participation}%</span></td>
                         </tr>
                       ))}
                     </tbody>
@@ -425,42 +396,16 @@ export default function App() {
             {commissioners.map(comm => (
               <div key={comm.id} className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm relative group hover:shadow-2xl transition-all duration-500 overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/50 rounded-bl-[100px] -mr-10 -mt-10 transition-all group-hover:bg-blue-100/50"></div>
-                {isAdmin && (
-                  <div className="absolute top-6 right-6 flex gap-2 z-10">
-                    <button onClick={() => setEditingCommissioner(comm)} className="p-2 text-slate-300 hover:text-blue-500 transition-colors"><Edit2 size={18}/></button>
-                    <button onClick={() => { if(window.confirm("Remove member?")) deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'commissioners', comm.id))}} className="p-2 text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={18}/></button>
-                  </div>
-                )}
+                {isAdmin && (<div className="absolute top-6 right-6 flex gap-2 z-10"><button onClick={() => setEditingCommissioner(comm)} className="p-2 text-slate-300 hover:text-blue-500 transition-colors"><Edit2 size={18}/></button><button onClick={() => { if(window.confirm("Remove member?")) deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'commissioners', comm.id))}} className="p-2 text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={18}/></button></div>)}
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-8 relative z-0">
                   <img src={comm.image} className="w-32 h-32 rounded-[32px] object-cover border-8 border-slate-50 shadow-xl" alt="" />
                   <div className="flex-1 text-center sm:text-left">
-                    <div className="mb-4">
-                      <h3 className="font-black text-2xl text-slate-900 mb-1 leading-tight">{comm.name}</h3>
-                      <p className="text-blue-600 font-bold uppercase text-sm tracking-widest">{comm.district}</p>
-                      <span className="text-[10px] font-black text-slate-400 uppercase">{comm.party}</span>
-                    </div>
-                    
+                    <div className="mb-4"><h3 className="font-black text-2xl text-slate-900 mb-1 leading-tight">{comm.name}</h3><p className="text-blue-600 font-bold uppercase text-sm tracking-widest">{comm.district}</p><span className="text-[10px] font-black text-slate-400 uppercase">{comm.party}</span></div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 flex items-center gap-3">
-                        <Award size={16} className="text-orange-500" />
-                        <div>
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Current Term</p>
-                          <p className="text-xs font-bold text-slate-700">{comm.currentTerm || "Not Set"}</p>
-                        </div>
-                      </div>
-                      <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 flex items-center gap-3">
-                        <CalendarDays size={16} className="text-blue-500" />
-                        <div>
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Assumed Office</p>
-                          <p className="text-xs font-bold text-slate-700">{comm.assumedOffice || "Not Set"}</p>
-                        </div>
-                      </div>
+                      <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 flex items-center gap-3"><Award size={16} className="text-orange-500" /><div><p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Current Term</p><p className="text-xs font-bold text-slate-700">{comm.currentTerm || "Not Set"}</p></div></div>
+                      <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 flex items-center gap-3"><CalendarDays size={16} className="text-blue-500" /><div><p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Assumed Office</p><p className="text-xs font-bold text-slate-700">{comm.assumedOffice || "Not Set"}</p></div></div>
                     </div>
-                    
-                    <div className="mt-4 p-3 bg-slate-900 text-white rounded-2xl flex justify-between items-center px-5">
-                       <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Term Expires</p>
-                       <p className="text-xs font-bold">{comm.termExpires || "TBD"}</p>
-                    </div>
+                    <div className="mt-4 p-3 bg-slate-900 text-white rounded-2xl flex justify-between items-center px-5"><p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Term Expires</p><p className="text-xs font-bold">{comm.termExpires || "TBD"}</p></div>
                   </div>
                 </div>
               </div>
@@ -476,8 +421,15 @@ export default function App() {
                   <div className="flex items-center gap-5">
                     <Calendar className="text-blue-600" size={24} />
                     <div>
-                      <h3 className="font-black text-2xl text-slate-900 leading-none mb-2">{meeting.title}</h3>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{meeting.date}</p>
+                      <div className="flex items-center gap-3">
+                        <h3 className="font-black text-2xl text-slate-900 leading-none">{meeting.title}</h3>
+                        {meeting.youtubeUrl && (
+                          <a href={meeting.youtubeUrl} target="_blank" rel="noopener noreferrer" className="text-red-600 hover:text-red-700 transition-colors" title="Watch Meeting on YouTube">
+                            <Youtube size={24} />
+                          </a>
+                        )}
+                      </div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2">{meeting.date}</p>
                     </div>
                   </div>
                   {isAdmin && (
@@ -491,36 +443,31 @@ export default function App() {
                 {meeting.items?.map((item, idx) => {
                   const activeIds = meeting.activeCommissionerIds || commissioners.map(c => c.id);
                   const activeComms = commissioners.filter(c => activeIds.includes(c.id));
-
                   return (
                     <div key={item.id} className="p-6 md:p-14 border-b last:border-0 relative">
                       {isAdmin && (
                         <div className="absolute top-6 md:top-10 right-6 md:right-10 flex gap-2">
                            <button onClick={() => setEditingItem({ meetingId: meeting.id, itemIndex: idx, itemData: item })} className="p-2 text-slate-300 hover:text-blue-500"><Edit2 size={16}/></button>
-                           <button onClick={() => { if(window.confirm("Delete item?")) {
-                              const updated = meeting.items.filter((_, i) => i !== idx);
-                              updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meeting.id), { items: updated });
-                           }}} className="p-2 text-slate-300 hover:text-red-500"><Trash2 size={16}/></button>
+                           <button onClick={() => { if(window.confirm("Delete item?")) { const updated = meeting.items.filter((_, i) => i !== idx); updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meeting.id), { items: updated }); }}} className="p-2 text-slate-300 hover:text-red-500"><Trash2 size={16}/></button>
                         </div>
                       )}
                       <div className="flex flex-col lg:flex-row justify-between items-start mb-12 gap-10">
                         <div className="max-w-4xl">
-                          <span className="text-[11px] font-black uppercase tracking-widest bg-blue-100 text-blue-700 px-4 py-1.5 rounded-full mb-5 inline-block">{item.category}</span>
+                          <div className="flex items-center gap-3 mb-5">
+                            <span className="text-[11px] font-black uppercase tracking-widest bg-blue-100 text-blue-700 px-4 py-1.5 rounded-full inline-block">{item.category}</span>
+                            {item.timestampUrl && (
+                              <a href={item.timestampUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest bg-red-100 text-red-700 px-4 py-1.5 rounded-full transition-transform hover:scale-105">
+                                <Youtube size={14} /> Watch Segment
+                              </a>
+                            )}
+                          </div>
                           <h4 className="text-2xl md:text-3xl font-black text-slate-900 mb-5 leading-tight">{item.title}</h4>
                           <p className="text-slate-500 text-base md:text-lg leading-relaxed font-medium">{item.description}</p>
                         </div>
-                        <div className={`min-w-[150px] w-full md:w-auto px-8 py-4 rounded-[24px] text-xs font-black uppercase tracking-[0.2em] text-center flex items-center justify-center gap-2 ${
-                          item.status === 'Passed' ? 'bg-green-100 text-green-700' : 
-                          item.status === 'Failed' ? 'bg-red-100 text-red-700' : 
-                          item.status === 'Upcoming' ? 'bg-slate-200 text-slate-700' :
-                          'bg-amber-100 text-amber-700'
-                        }`}>
-                          {item.status === 'Upcoming' && <Clock size={14} />}
-                          {item.status}
+                        <div className={`min-w-[150px] w-full md:w-auto px-8 py-4 rounded-[24px] text-xs font-black uppercase tracking-[0.2em] text-center flex items-center justify-center gap-2 ${item.status === 'Passed' ? 'bg-green-100 text-green-700' : item.status === 'Failed' ? 'bg-red-100 text-red-700' : item.status === 'Upcoming' ? 'bg-slate-200 text-slate-700' : 'bg-amber-100 text-amber-700'}`}>
+                          {item.status === 'Upcoming' && <Clock size={14} />}{item.status}
                         </div>
                       </div>
-                      
-                      {/* Only show votes if the item has actually happened */}
                       {item.status !== 'Upcoming' ? (
                         <div className="bg-slate-50/70 p-6 md:p-8 rounded-[32px] md:rounded-[40px] grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-6">
                           {activeComms.map(comm => (
@@ -528,33 +475,14 @@ export default function App() {
                               <img src={comm.image} className="w-12 h-12 md:w-16 md:h-16 rounded-[16px] md:rounded-[20px] mx-auto object-cover border-4 border-white shadow-xl mb-3 transition-all group-hover/voter:scale-110" alt="" />
                               <p className="text-[10px] md:text-xs font-black text-slate-700 truncate mb-3">{comm.name.split(' ').pop()}</p>
                               {isAdmin ? (
-                                <button 
-                                  onClick={() => updateVote(meeting.id, idx, comm.id, item.votes[comm.id])} 
-                                  className={`text-[10px] font-black px-4 py-1.5 rounded-xl text-white shadow-md active:scale-90 w-full ${
-                                    item.votes[comm.id] === 'Yes' ? 'bg-green-600' : 
-                                    item.votes[comm.id] === 'No' ? 'bg-red-600' : 'bg-slate-400'
-                                  }`}
-                                >
-                                  {item.votes[comm.id] || "N/A"}
-                                </button>
+                                <button onClick={() => updateVote(meeting.id, idx, comm.id, item.votes[comm.id])} className={`text-[10px] font-black px-4 py-1.5 rounded-xl text-white shadow-md active:scale-90 w-full ${item.votes[comm.id] === 'Yes' ? 'bg-green-600' : item.votes[comm.id] === 'No' ? 'bg-red-600' : 'bg-slate-400'}`}>{item.votes[comm.id] || "N/A"}</button>
                               ) : (
-                                <div className={`text-[10px] font-black flex items-center justify-center gap-1 ${
-                                  item.votes[comm.id] === 'Yes' ? 'text-green-600' : 
-                                  item.votes[comm.id] === 'No' ? 'text-red-600' : 'text-slate-400 italic'
-                                }`}>
-                                  {item.votes[comm.id] === 'Yes' ? <CheckCircle size={12}/> : 
-                                   item.votes[comm.id] === 'No' ? <XCircle size={12}/> : <Clock size={12}/>} 
-                                  {item.votes[comm.id] || "N/A"}
-                                </div>
+                                <div className={`text-[10px] font-black flex items-center justify-center gap-1 ${item.votes[comm.id] === 'Yes' ? 'text-green-600' : item.votes[comm.id] === 'No' ? 'text-red-600' : 'text-slate-400 italic'}`}>{item.votes[comm.id] === 'Yes' ? <CheckCircle size={12}/> : item.votes[comm.id] === 'No' ? <XCircle size={12}/> : <Clock size={12}/>} {item.votes[comm.id] || "N/A"}</div>
                               )}
                             </div>
                           ))}
                         </div>
-                      ) : (
-                        <div className="p-8 bg-blue-50/50 rounded-[40px] border border-dashed border-blue-200 text-center">
-                           <p className="text-blue-600 font-bold text-sm">Meeting Pending. Voting records will be updated once the session concludes.</p>
-                        </div>
-                      )}
+                      ) : (<div className="p-8 bg-blue-50/50 rounded-[40px] border border-dashed border-blue-200 text-center"><p className="text-blue-600 font-bold text-sm">Meeting Pending. Voting records will be updated once the session concludes.</p></div>)}
                     </div>
                   );
                 })}
@@ -568,48 +496,22 @@ export default function App() {
         {(isAddingMeeting || editingMeeting) && (
           <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 md:p-8 animate-in fade-in">
             <div className="bg-white rounded-[32px] md:rounded-[56px] w-full max-w-2xl p-6 md:p-12 shadow-2xl max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-10">
-                <h3 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">{editingMeeting ? "Update Session Roster" : "New Meeting Date"}</h3>
-                <button onClick={() => {setIsAddingMeeting(false); setEditingMeeting(null);}} className="text-slate-300 hover:text-slate-600"><X size={32}/></button>
-              </div>
+              <div className="flex justify-between items-center mb-10"><h3 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">{editingMeeting ? "Update Session Roster" : "New Meeting Date"}</h3><button onClick={() => {setIsAddingMeeting(false); setEditingMeeting(null);}} className="text-slate-300 hover:text-slate-600"><X size={32}/></button></div>
               <form onSubmit={handleMeetingSubmit} className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date</label>
-                    <input name="date" type="date" required defaultValue={editingMeeting?.date} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-[20px] font-bold outline-none" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Title</label>
-                    <input name="title" placeholder="e.g. Regular Session" required defaultValue={editingMeeting?.title} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-[20px] font-bold outline-none" />
-                  </div>
+                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date</label><input name="date" type="date" required defaultValue={editingMeeting?.date} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-[20px] font-bold outline-none" /></div>
+                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Title</label><input name="title" placeholder="e.g. Regular Session" required defaultValue={editingMeeting?.title} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-[20px] font-bold outline-none" /></div>
                 </div>
-
+                <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full YouTube URL (Optional)</label><input name="youtubeUrl" placeholder="https://youtube.com/watch?v=..." defaultValue={editingMeeting?.youtubeUrl} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-[20px] font-bold outline-none" /></div>
                 <div className="bg-slate-50 p-6 md:p-8 rounded-[32px] border border-slate-100">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Active Roster Selection</p>
                   <div className="grid grid-cols-1 gap-4">
                     {commissioners.map(comm => {
                       const isActive = editingMeeting?.activeCommissionerIds?.includes(comm.id) ?? true;
-                      return (
-                        <label key={comm.id} className="flex items-center gap-3 p-4 bg-white rounded-2xl border border-slate-100 cursor-pointer hover:border-blue-500 transition-all">
-                          <input 
-                            type="checkbox" 
-                            name={`active-${comm.id}`} 
-                            defaultChecked={isActive}
-                            className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500" 
-                          />
-                          <div className="flex items-center gap-2">
-                             <img src={comm.image} className="w-8 h-8 rounded-full object-cover" alt="" />
-                             <div>
-                               <p className="text-xs font-bold text-slate-900">{comm.name}</p>
-                               <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">{comm.district}</p>
-                             </div>
-                          </div>
-                        </label>
-                      );
+                      return (<label key={comm.id} className="flex items-center gap-3 p-4 bg-white rounded-2xl border border-slate-100 cursor-pointer hover:border-blue-500 transition-all"><input type="checkbox" name={`active-${comm.id}`} defaultChecked={isActive} className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500" /><div className="flex items-center gap-2"><img src={comm.image} className="w-8 h-8 rounded-full object-cover" alt="" /><div><p className="text-xs font-bold text-slate-900">{comm.name}</p><p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">{comm.district}</p></div></div></label>);
                     })}
                   </div>
                 </div>
-
                 <button type="submit" className="w-full bg-blue-600 text-white py-5 md:py-6 rounded-[24px] md:rounded-[32px] font-black text-lg md:text-xl shadow-2xl transition-transform active:scale-95">{editingMeeting ? "Update Session" : "Create Meeting Container"}</button>
               </form>
             </div>
@@ -619,34 +521,15 @@ export default function App() {
         {(isAddingItemToMeeting || editingItem) && (
           <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[60] flex items-center justify-center p-4 md:p-8 animate-in fade-in">
             <div className="bg-white rounded-[32px] md:rounded-[56px] w-full max-w-2xl p-6 md:p-12 shadow-2xl max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-10">
-                <h3 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">{editingItem ? "Edit Agenda Item" : "Add Agenda Item"}</h3>
-                <button onClick={() => {setIsAddingItemToMeeting(null); setEditingItem(null);}} className="text-slate-300 hover:text-slate-600"><X size={32}/></button>
-              </div>
+              <div className="flex justify-between items-center mb-10"><h3 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">{editingItem ? "Edit Agenda Item" : "Add Agenda Item"}</h3><button onClick={() => {setIsAddingItemToMeeting(null); setEditingItem(null);}} className="text-slate-300 hover:text-slate-600"><X size={32}/></button></div>
               <form onSubmit={handleItemSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                   <div className="space-y-2">
-                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</label>
-                     <input name="category" placeholder="e.g. LEDA" defaultValue={editingItem?.itemData.category} required className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none focus:border-blue-500" />
-                   </div>
-                   <div className="space-y-2">
-                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Final Outcome</label>
-                     <select name="status" defaultValue={editingItem?.itemData.status || "Upcoming"} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none">
-                       <option value="Upcoming">Upcoming (Pending Meeting)</option>
-                       <option value="Passed">Passed</option>
-                       <option value="Failed">Failed</option>
-                       <option value="Tabled">Tabled</option>
-                     </select>
-                   </div>
+                   <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</label><input name="category" placeholder="e.g. LEDA" defaultValue={editingItem?.itemData.category} required className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none focus:border-blue-500" /></div>
+                   <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Final Outcome</label><select name="status" defaultValue={editingItem?.itemData.status || "Upcoming"} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none"><option value="Upcoming">Upcoming (Pending Meeting)</option><option value="Passed">Passed</option><option value="Failed">Failed</option><option value="Tabled">Tabled</option></select></div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Agenda Title</label>
-                  <input name="title" placeholder="Official Title" required defaultValue={editingItem?.itemData.title} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-lg outline-none" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Public Summary</label>
-                  <textarea name="description" placeholder="Description..." rows="4" defaultValue={editingItem?.itemData.description} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-3xl text-lg outline-none"></textarea>
-                </div>
+                <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Agenda Title</label><input name="title" placeholder="Official Title" required defaultValue={editingItem?.itemData.title} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-lg outline-none" /></div>
+                <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Timestamp URL (Optional)</label><input name="timestampUrl" placeholder="https://youtu.be/...&t=123" defaultValue={editingItem?.itemData.timestampUrl} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none" /></div>
+                <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Public Summary</label><textarea name="description" placeholder="Description..." rows="4" defaultValue={editingItem?.itemData.description} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-3xl text-lg outline-none"></textarea></div>
                 <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-[24px] font-black text-xl shadow-2xl transition-transform active:scale-95">Save Agenda Item</button>
               </form>
             </div>
@@ -656,29 +539,11 @@ export default function App() {
         {(isAddingCommissioner || editingCommissioner) && (
           <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 md:p-8 animate-in fade-in">
             <div className="bg-white rounded-[32px] md:rounded-[56px] w-full max-w-2xl p-6 md:p-12 shadow-2xl max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-10">
-                <h3 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">{editingCommissioner ? "Update Profile" : "New Member"}</h3>
-                <button onClick={() => {setIsAddingCommissioner(false); setEditingCommissioner(null);}} className="text-slate-300 hover:text-slate-600"><X size={32}/></button>
-              </div>
+              <div className="flex justify-between items-center mb-10"><h3 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">{editingCommissioner ? "Update Profile" : "New Member"}</h3><button onClick={() => {setIsAddingCommissioner(false); setEditingCommissioner(null);}} className="text-slate-300 hover:text-slate-600"><X size={32}/></button></div>
               <form onSubmit={handleCommissionerSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <input name="name" placeholder="Full Name" required defaultValue={editingCommissioner?.name} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none" />
-                  <input name="district" placeholder="District (e.g. District 5)" required defaultValue={editingCommissioner?.district} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none" />
-                  <input name="party" placeholder="Party / Affiliation" defaultValue={editingCommissioner?.party} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none" />
-                  <input name="currentTerm" placeholder="Current Term" defaultValue={editingCommissioner?.currentTerm} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none" />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Assumed Office</label>
-                    <input name="assumedOffice" type="date" defaultValue={editingCommissioner?.assumedOffice} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Term Expires</label>
-                    <input name="termExpires" type="date" defaultValue={editingCommissioner?.termExpires} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none" />
-                  </div>
-                </div>
-                <input name="image" placeholder="Photo URL" defaultValue={editingCommissioner?.image} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none" />
-                <button type="submit" className="w-full bg-orange-500 text-white py-5 rounded-[24px] font-black text-xl shadow-2xl transition-transform active:scale-95">Update Member</button>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6"><input name="name" placeholder="Full Name" required defaultValue={editingCommissioner?.name} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none" /><input name="district" placeholder="District (e.g. District 5)" required defaultValue={editingCommissioner?.district} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none" /><input name="party" placeholder="Party / Affiliation" defaultValue={editingCommissioner?.party} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none" /><input name="currentTerm" placeholder="Current Term" defaultValue={editingCommissioner?.currentTerm} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none" /></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6"><div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Assumed Office</label><input name="assumedOffice" type="date" defaultValue={editingCommissioner?.assumedOffice} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none" /></div><div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Term Expires</label><input name="termExpires" type="date" defaultValue={editingCommissioner?.termExpires} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none" /></div></div>
+                <input name="image" placeholder="Photo URL" defaultValue={editingCommissioner?.image} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none" /><button type="submit" className="w-full bg-orange-500 text-white py-5 rounded-[24px] font-black text-xl shadow-2xl transition-transform active:scale-95">Update Member</button>
               </form>
             </div>
           </div>
@@ -686,18 +551,7 @@ export default function App() {
 
         {isLoginModalOpen && (
           <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[100] flex items-center justify-center p-6 animate-in fade-in">
-            <div className="bg-white rounded-[40px] w-full max-w-md p-10 shadow-2xl relative">
-              <div className="flex justify-between items-center mb-10">
-                <h3 className="text-3xl font-black text-slate-900 tracking-tight">Admin Portal</h3>
-                <button onClick={() => setIsLoginModalOpen(false)} className="text-slate-300 hover:text-slate-600"><X size={32}/></button>
-              </div>
-              {loginError && (<div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600 text-sm font-bold"><AlertCircle size={20} /> {loginError}</div>)}
-              <form onSubmit={handleLogin} className="space-y-6">
-                <input name="email" type="email" required placeholder="Email" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-blue-500 font-bold" />
-                <input name="password" type="password" required placeholder="Password" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-blue-500 font-bold" />
-                <button type="submit" disabled={isLoggingIn} className="w-full bg-slate-900 text-white py-5 rounded-[24px] font-black text-lg disabled:opacity-50 transition-transform active:scale-95">{isLoggingIn ? "Signing In..." : "Log In"}</button>
-              </form>
-            </div>
+            <div className="bg-white rounded-[40px] w-full max-w-md p-10 shadow-2xl relative"><div className="flex justify-between items-center mb-10"><h3 className="text-3xl font-black text-slate-900 tracking-tight">Admin Portal</h3><button onClick={() => setIsLoginModalOpen(false)} className="text-slate-300 hover:text-slate-600"><X size={32}/></button></div>{loginError && (<div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600 text-sm font-bold"><AlertCircle size={20} /> {loginError}</div>)}<form onSubmit={handleLogin} className="space-y-6"><input name="email" type="email" required placeholder="Email" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-blue-500 font-bold" /><input name="password" type="password" required placeholder="Password" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-blue-500 font-bold" /><button type="submit" disabled={isLoggingIn} className="w-full bg-slate-900 text-white py-5 rounded-[24px] font-black text-lg disabled:opacity-50 transition-transform active:scale-95">{isLoggingIn ? "Signing In..." : "Log In"}</button></form></div>
           </div>
         )}
       </main>
