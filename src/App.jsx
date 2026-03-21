@@ -59,7 +59,15 @@ import {
   ShieldCheck,
   UserX,
   Info,
-  CircleSlash
+  CircleSlash,
+  ChevronDown,
+  ChevronUp,
+  MapPin,
+  Github,
+  Mail,
+  ShieldAlert,
+  Code,
+  MessagesSquare
 } from 'lucide-react';
 
 // --- FIREBASE CONFIGURATION ---
@@ -83,6 +91,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [commissioners, setCommissioners] = useState([]);
   const [meetings, setMeetings] = useState([]);
+  const [expandedMeetings, setExpandedMeetings] = useState([]);
   
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isAddingMeeting, setIsAddingMeeting] = useState(false);
@@ -118,7 +127,11 @@ export default function App() {
     const meetRef = collection(db, 'artifacts', appId, 'public', 'data', 'meetings');
     const unsubscribeMeet = onSnapshot(meetRef, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setMeetings(data.sort((a, b) => new Date(b.date) - new Date(a.date)));
+      const sorted = data.sort((a, b) => new Date(b.date) - new Date(a.date));
+      setMeetings(sorted);
+      if (sorted.length > 0 && expandedMeetings.length === 0) {
+        setExpandedMeetings([sorted[0].id]);
+      }
     }, (err) => console.error("Firestore error:", err));
     return () => {
       unsubscribeComm();
@@ -213,7 +226,6 @@ export default function App() {
     const meeting = meetings.find(m => m.id === meetingId);
     const updatedItems = [...meeting.items];
     
-    // Cycle: Yes -> No -> Absent -> N/A -> Yes
     let nextVote = "Yes";
     if (current === "Yes") nextVote = "No";
     else if (current === "No") nextVote = "Absent";
@@ -221,6 +233,12 @@ export default function App() {
 
     updatedItems[itemIndex].votes[commId] = nextVote;
     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meetingId), { items: updatedItems });
+  };
+
+  const toggleMeetingCollapse = (id) => {
+    setExpandedMeetings(prev => 
+      prev.includes(id) ? prev.filter(mid => mid !== id) : [...prev, id]
+    );
   };
 
   const dashboardStats = useMemo(() => {
@@ -231,7 +249,6 @@ export default function App() {
     })));
     
     let unanimousCount = 0;
-    // Finished items excluding procedural/N.A. items for stats accuracy
     const votingItems = allItems.filter(i => i.status !== "Upcoming" && i.status !== "N/A (No Vote Required)");
 
     votingItems.forEach(item => {
@@ -302,7 +319,12 @@ export default function App() {
           <h1 className="font-black text-2xl tracking-tighter">CivicWatch</h1>
         </div>
         <nav className="space-y-2 flex-1">
-          {[{ id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard }, { id: 'commissioners', label: 'Commissioners', icon: Users }, { id: 'meetings', label: 'Archive', icon: Calendar }].map((tab) => (
+          {[
+            { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard }, 
+            { id: 'commissioners', label: 'Commissioners', icon: Users }, 
+            { id: 'meetings', label: 'Archive', icon: Calendar },
+            { id: 'about', label: 'About', icon: Info }
+          ].map((tab) => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all font-bold ${activeTab === tab.id ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/20 translate-x-1' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
               <tab.icon size={20} /> {tab.label}
             </button>
@@ -325,6 +347,7 @@ export default function App() {
           { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
           { id: 'commissioners', label: 'Members', icon: Users },
           { id: 'meetings', label: 'Archive', icon: Calendar },
+          { id: 'about', label: 'About', icon: Info },
         ].map((tab) => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex flex-col items-center gap-1 transition-colors ${activeTab === tab.id ? 'text-blue-600' : 'text-slate-400'}`}>
             <tab.icon size={20} />
@@ -336,8 +359,8 @@ export default function App() {
       <main className="flex-1 md:ml-64 p-6 md:p-12 lg:p-16 pb-32 md:pb-12">
         <header className="mb-14 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
           <div className="flex flex-col">
-            <h2 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight mb-2">
-              {activeTab === 'dashboard' ? 'Insight Hub' : activeTab === 'commissioners' ? 'Representatives' : 'Archives'}
+            <h2 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight mb-2 uppercase">
+              {activeTab === 'dashboard' ? 'Insight Hub' : activeTab === 'commissioners' ? 'Representatives' : activeTab === 'about' ? 'Transparency' : 'Archives'}
             </h2>
             <p className="text-slate-500 font-semibold text-lg">Public accountability for Alamogordo.</p>
           </div>
@@ -446,8 +469,12 @@ export default function App() {
                       <div className="flex-1 text-center sm:text-left">
                         <div className="mb-4">
                           <h3 className="font-black text-2xl text-slate-900 mb-1 leading-tight">{comm.name}</h3>
-                          <p className="text-blue-600 font-bold uppercase text-sm tracking-widest">{comm.role || comm.district}</p>
-                          <span className="text-[10px] font-black text-slate-400 uppercase">{comm.party}</span>
+                          <p className="text-blue-600 font-bold uppercase text-sm tracking-widest">{comm.role || "Commissioner"}</p>
+                          <div className="flex items-center gap-1.5 justify-center sm:justify-start mt-1">
+                             <MapPin size={12} className="text-slate-400" />
+                             <span className="text-xs font-black text-slate-500 uppercase tracking-widest">{comm.district}</span>
+                          </div>
+                          <span className="text-[10px] font-black text-slate-400 uppercase mt-2 block">{comm.party}</span>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 flex items-center gap-3">
@@ -494,6 +521,10 @@ export default function App() {
                         <div>
                           <h4 className="font-bold text-slate-700 leading-tight">{comm.name}</h4>
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{comm.role || comm.district}</p>
+                          <div className="flex items-center gap-1 mt-1">
+                             <MapPin size={10} className="text-slate-300" />
+                             <span className="text-[10px] text-slate-400 font-bold uppercase">{comm.district}</span>
+                          </div>
                         </div>
                       </div>
                       <div className="space-y-1 pt-2 border-t border-slate-50">
@@ -515,123 +546,214 @@ export default function App() {
         )}
 
         {activeTab === 'meetings' && (
-          <div className="space-y-12">
-            {meetings.map(meeting => (
-              <div key={meeting.id} className="bg-white rounded-[56px] border border-slate-100 shadow-sm overflow-hidden mb-8">
-                <div className="p-6 md:p-10 bg-slate-50/50 border-b border-slate-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                  <div className="flex items-center gap-5">
-                    <Calendar className="text-blue-600" size={24} />
-                    <div>
-                      <div className="flex items-center gap-3">
-                        <h3 className="font-black text-2xl text-slate-900 leading-none">{meeting.title}</h3>
-                        {meeting.youtubeUrl && (
-                          <a href={meeting.youtubeUrl} target="_blank" rel="noopener noreferrer" className="text-red-600 hover:text-red-700 transition-colors" title="Watch Meeting on YouTube">
-                            <Youtube size={24} />
-                          </a>
-                        )}
+          <div className="space-y-6 animate-in fade-in duration-500">
+            {meetings.map(meeting => {
+              const isExpanded = expandedMeetings.includes(meeting.id);
+              return (
+                <div key={meeting.id} className={`bg-white rounded-[44px] border transition-all duration-300 ${isExpanded ? 'border-blue-100 shadow-xl' : 'border-slate-100 shadow-sm hover:border-slate-300'}`}>
+                  <div 
+                    onClick={() => toggleMeetingCollapse(meeting.id)}
+                    className={`p-6 md:p-10 cursor-pointer flex flex-col md:flex-row items-start md:items-center justify-between gap-4 select-none ${isExpanded ? 'bg-slate-50/50 rounded-t-[44px] border-b border-slate-100' : 'rounded-[44px]'}`}
+                  >
+                    <div className="flex items-center gap-5">
+                      <div className={`p-4 rounded-2xl transition-colors ${isExpanded ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                        <Calendar size={24} />
                       </div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2">{meeting.date}</p>
+                      <div>
+                        <div className="flex items-center gap-3">
+                          <h3 className="font-black text-2xl text-slate-900 leading-none">{meeting.title}</h3>
+                          {meeting.youtubeUrl && (
+                            <a href={meeting.youtubeUrl} target="_blank" rel="noopener noreferrer" className="text-red-600 hover:text-red-700 transition-colors" onClick={(e) => e.stopPropagation()} title="Watch Meeting on YouTube">
+                              <Youtube size={24} />
+                            </a>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 mt-2">
+                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{meeting.date}</p>
+                           <span className="text-slate-300">•</span>
+                           <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest">{meeting.items?.length || 0} Agenda Items</p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  {isAdmin && (
-                    <div className="flex gap-4">
-                       <button onClick={() => setIsAddingItemToMeeting(meeting.id)} className="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-transform hover:scale-105"><Plus size={16}/> Add Item</button>
-                       <button onClick={() => setEditingMeeting(meeting)} className="p-2 text-slate-400 hover:text-blue-600"><Edit2 size={20}/></button>
-                       <button onClick={() => { if(window.confirm("Delete meeting?")) deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meeting.id))}} className="p-2 text-slate-400 hover:text-red-600"><Trash2 size={20}/></button>
-                    </div>
-                  )}
-                </div>
-                {meeting.items?.map((item, idx) => {
-                  const activeIds = meeting.activeCommissionerIds || commissioners.filter(c => c.isActive !== false).map(c => c.id);
-                  const activeComms = commissioners.filter(c => activeIds.includes(c.id));
-                  const isNoVoteItem = item.status === "N/A (No Vote Required)";
-
-                  return (
-                    <div key={item.id} className="p-6 md:p-14 border-b last:border-0 relative">
+                    
+                    <div className="flex items-center gap-4 ml-auto md:ml-0">
                       {isAdmin && (
-                        <div className="absolute top-6 md:top-10 right-6 md:right-10 flex gap-2">
-                           <button onClick={() => setEditingItem({ meetingId: meeting.id, itemIndex: idx, itemData: item })} className="p-2 text-slate-300 hover:text-blue-500"><Edit2 size={16}/></button>
-                           <button onClick={() => { if(window.confirm("Delete item?")) { const updated = meeting.items.filter((_, i) => i !== idx); updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meeting.id), { items: updated }); }}} className="p-2 text-slate-300 hover:text-red-500"><Trash2 size={16}/></button>
+                        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                           <button onClick={() => setIsAddingItemToMeeting(meeting.id)} className="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-transform hover:scale-105"><Plus size={16}/> Add Item</button>
+                           <button onClick={() => setEditingMeeting(meeting)} className="p-2 text-slate-400 hover:text-blue-600"><Edit2 size={20}/></button>
+                           <button onClick={() => { if(window.confirm("Delete meeting?")) deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meeting.id))}} className="p-2 text-slate-400 hover:text-red-600"><Trash2 size={20}/></button>
                         </div>
                       )}
-                      <div className="flex flex-col lg:flex-row justify-between items-start mb-12 gap-10">
-                        <div className="max-w-4xl">
-                          <div className="flex items-center gap-3 mb-5">
-                            <span className="text-[11px] font-black uppercase tracking-widest bg-blue-100 text-blue-700 px-4 py-1.5 rounded-full inline-block">{item.category}</span>
-                            {item.timestampUrl && (
-                              <a href={item.timestampUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest bg-red-100 text-red-700 px-4 py-1.5 rounded-full transition-transform hover:scale-105">
-                                <Youtube size={14} /> Watch Segment
-                              </a>
-                            )}
-                          </div>
-                          <h4 className="text-2xl md:text-3xl font-black text-slate-900 mb-5 leading-tight">{item.title}</h4>
-                          <p className="text-slate-500 text-base md:text-lg leading-relaxed font-medium">{item.description}</p>
-                        </div>
-                        <div className={`min-w-[150px] w-full md:w-auto px-8 py-4 rounded-[24px] text-xs font-black uppercase tracking-[0.2em] text-center flex items-center justify-center gap-2 ${
-                          item.status === 'Passed' ? 'bg-green-100 text-green-700' : 
-                          item.status === 'Failed' ? 'bg-red-100 text-red-700' : 
-                          item.status === 'Upcoming' ? 'bg-slate-200 text-slate-700' :
-                          item.status === 'N/A (No Vote Required)' ? 'bg-slate-100 text-slate-500' :
-                          'bg-amber-100 text-amber-700'
-                        }`}>
-                          {item.status === 'Upcoming' && <Clock size={14} />}
-                          {item.status === 'N/A (No Vote Required)' && <CircleSlash size={14} />}
-                          {item.status}
-                        </div>
+                      <div className="p-2 text-slate-300">
+                         {isExpanded ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
                       </div>
-                      
-                      {item.status === 'Upcoming' ? (
-                        <div className="p-8 bg-blue-50/50 rounded-[40px] border border-dashed border-blue-200 text-center">
-                          <p className="text-blue-600 font-bold text-sm">Meeting Pending. Voting records will be updated once the session concludes.</p>
-                        </div>
-                      ) : isNoVoteItem ? (
-                        <div className="p-8 bg-slate-50 rounded-[40px] border border-dashed border-slate-200 text-center flex flex-col items-center">
-                           <Info size={24} className="text-slate-400 mb-3" />
-                           <p className="text-slate-500 font-bold text-sm">Discussion or Procedural Item. No voting action was required for this agenda entry.</p>
-                        </div>
+                    </div>
+                  </div>
+
+                  {isExpanded && (
+                    <div className="animate-in slide-in-from-top-2 duration-300">
+                      {meeting.items?.length === 0 ? (
+                        <div className="p-14 text-center text-slate-400 italic font-medium">No agenda items logged for this session.</div>
                       ) : (
-                        <div className="bg-slate-50/70 p-6 md:p-8 rounded-[32px] md:rounded-[40px] grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-6">
-                          {activeComms.map(comm => (
-                            <div key={comm.id} className="text-center group/voter">
-                              <img src={comm.image} className="w-12 h-12 md:w-16 md:h-16 rounded-[16px] md:rounded-[20px] mx-auto object-cover border-4 border-white shadow-xl mb-3 transition-all group-hover/voter:scale-110" alt="" />
-                              <p className="text-[10px] md:text-xs font-black text-slate-700 truncate mb-3">{comm.name.split(' ').pop()}</p>
-                              {isAdmin ? (
-                                <button onClick={() => updateVote(meeting.id, idx, comm.id, item.votes[comm.id])} className={`text-[10px] font-black px-4 py-1.5 rounded-xl text-white shadow-md active:scale-90 w-full ${
-                                  item.votes[comm.id] === 'Yes' ? 'bg-green-600' : 
-                                  item.votes[comm.id] === 'No' ? 'bg-red-600' : 
-                                  item.votes[comm.id] === 'Absent' ? 'bg-purple-600' : 
-                                  'bg-slate-400'
-                                }`}>{item.votes[comm.id] || "N/A"}</button>
-                              ) : (
-                                <div className={`text-[10px] font-black flex items-center justify-center gap-1 ${
-                                  item.votes[comm.id] === 'Yes' ? 'text-green-600' : 
-                                  item.votes[comm.id] === 'No' ? 'text-red-600' : 
-                                  item.votes[comm.id] === 'Absent' ? 'text-purple-600' : 
-                                  'text-slate-400 italic'
+                        meeting.items?.map((item, idx) => {
+                          const activeIds = meeting.activeCommissionerIds || commissioners.filter(c => c.isActive !== false).map(c => c.id);
+                          const activeComms = commissioners.filter(c => activeIds.includes(c.id));
+                          const isNoVoteItem = item.status === "N/A (No Vote Required)";
+
+                          return (
+                            <div key={item.id} className="p-6 md:p-14 border-b last:border-0 relative">
+                              {isAdmin && (
+                                <div className="absolute top-6 md:top-10 right-6 md:right-10 flex gap-2">
+                                   <button onClick={() => setEditingItem({ meetingId: meeting.id, itemIndex: idx, itemData: item })} className="p-2 text-slate-300 hover:text-blue-500"><Edit2 size={16}/></button>
+                                   <button onClick={() => { if(window.confirm("Delete item?")) { const updated = meeting.items.filter((_, i) => i !== idx); updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meeting.id), { items: updated }); }}} className="p-2 text-slate-300 hover:text-red-500"><Trash2 size={16}/></button>
+                                </div>
+                              )}
+                              <div className="flex flex-col lg:flex-row justify-between items-start mb-12 gap-10">
+                                <div className="max-w-4xl">
+                                  <div className="flex items-center gap-3 mb-5">
+                                    <span className="text-[11px] font-black uppercase tracking-widest bg-blue-100 text-blue-700 px-4 py-1.5 rounded-full inline-block">{item.category}</span>
+                                    {item.timestampUrl && (
+                                      <a href={item.timestampUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest bg-red-100 text-red-700 px-4 py-1.5 rounded-full transition-transform hover:scale-105">
+                                        <Youtube size={14} /> Watch Segment
+                                      </a>
+                                    )}
+                                  </div>
+                                  <h4 className="text-2xl md:text-3xl font-black text-slate-900 mb-5 leading-tight">{item.title}</h4>
+                                  <p className="text-slate-500 text-base md:text-lg leading-relaxed font-medium">{item.description}</p>
+                                </div>
+                                <div className={`min-w-[150px] w-full md:w-auto px-8 py-4 rounded-[24px] text-xs font-black uppercase tracking-[0.2em] text-center flex items-center justify-center gap-2 ${
+                                  item.status === 'Passed' ? 'bg-green-100 text-green-700' : 
+                                  item.status === 'Failed' ? 'bg-red-100 text-red-700' : 
+                                  item.status === 'Upcoming' ? 'bg-slate-200 text-slate-700' :
+                                  item.status === 'N/A (No Vote Required)' ? 'bg-slate-100 text-slate-500' :
+                                  'bg-amber-100 text-amber-700'
                                 }`}>
-                                  {item.votes[comm.id] === 'Yes' ? <CheckCircle size={12}/> : 
-                                   item.votes[comm.id] === 'No' ? <XCircle size={12}/> : 
-                                   item.votes[comm.id] === 'Absent' ? <UserX size={12}/> : 
-                                   <Clock size={12}/>} 
-                                  {item.votes[comm.id] || "N/A"}
+                                  {item.status === 'Upcoming' && <Clock size={14} />}
+                                  {item.status === 'N/A (No Vote Required)' && <CircleSlash size={14} />}
+                                  {item.status}
+                                </div>
+                              </div>
+                              
+                              {item.status === 'Upcoming' ? (
+                                <div className="p-8 bg-blue-50/50 rounded-[40px] border border-dashed border-blue-200 text-center">
+                                  <p className="text-blue-600 font-bold text-sm">Meeting Pending. Voting records will be updated once the session concludes.</p>
+                                </div>
+                              ) : isNoVoteItem ? (
+                                <div className="p-8 bg-slate-50 rounded-[40px] border border-dashed border-slate-200 text-center flex flex-col items-center">
+                                   <Info size={24} className="text-slate-400 mb-3" />
+                                   <p className="text-slate-500 font-bold text-sm">Discussion or Procedural Item. No voting action was required for this agenda entry.</p>
+                                </div>
+                              ) : (
+                                <div className="bg-slate-50/70 p-6 md:p-8 rounded-[32px] md:rounded-[40px] grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-6">
+                                  {activeComms.map(comm => (
+                                    <div key={comm.id} className="text-center group/voter">
+                                      <img src={comm.image} className="w-12 h-12 md:w-16 md:h-16 rounded-[16px] md:rounded-[20px] mx-auto object-cover border-4 border-white shadow-xl mb-3 transition-all group-hover/voter:scale-110" alt="" />
+                                      <p className="text-[10px] md:text-xs font-black text-slate-700 truncate mb-3">{comm.name.split(' ').pop()}</p>
+                                      {isAdmin ? (
+                                        <button onClick={() => updateVote(meeting.id, idx, comm.id, item.votes[comm.id])} className={`text-[10px] font-black px-4 py-1.5 rounded-xl text-white shadow-md active:scale-90 w-full ${
+                                          item.votes[comm.id] === 'Yes' ? 'bg-green-600' : 
+                                          item.votes[comm.id] === 'No' ? 'bg-red-600' : 
+                                          item.votes[comm.id] === 'Absent' ? 'bg-purple-600' : 
+                                          'bg-slate-400'
+                                        }`}>{item.votes[comm.id] || "N/A"}</button>
+                                      ) : (
+                                        <div className={`text-[10px] font-black flex items-center justify-center gap-1 ${
+                                          item.votes[comm.id] === 'Yes' ? 'text-green-600' : 
+                                          item.votes[comm.id] === 'No' ? 'text-red-600' : 
+                                          item.votes[comm.id] === 'Absent' ? 'text-purple-600' : 
+                                          'text-slate-400 italic'
+                                        }`}>
+                                          {item.votes[comm.id] === 'Yes' ? <CheckCircle size={12}/> : 
+                                           item.votes[comm.id] === 'No' ? <XCircle size={12}/> : 
+                                           item.votes[comm.id] === 'Absent' ? <UserX size={12}/> : 
+                                           <Clock size={12}/>} 
+                                          {item.votes[comm.id] || "N/A"}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
                                 </div>
                               )}
                             </div>
-                          ))}
-                        </div>
+                          );
+                        })
                       )}
                     </div>
-                  );
-                })}
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {activeTab === 'about' && (
+          <div className="max-w-4xl space-y-10 animate-in fade-in duration-500">
+            {/* Disclaimer Section */}
+            <div className="bg-white p-10 rounded-[44px] border border-orange-100 shadow-sm relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-8 text-orange-100"><ShieldAlert size={120} /></div>
+              <div className="relative z-10">
+                <h3 className="text-2xl font-black text-slate-900 mb-6 flex items-center gap-3"><ShieldAlert className="text-orange-500" /> Content Disclaimer</h3>
+                <div className="space-y-4 text-slate-600 text-lg leading-relaxed font-medium">
+                  <p>
+                    CivicWatch is a <span className="text-slate-900 font-bold italic underline decoration-orange-300">personal passion project</span> created and maintained by Sven Sears. 
+                  </p>
+                  <p>
+                    Although the creator is an employee of the City of Alamogordo, this platform is <span className="text-slate-900 font-bold">not managed, funded, or endorsed by the City of Alamogordo.</span> 
+                  </p>
+                  <p>
+                    All data and records shown here are compiled from publicly available sources, including official city meeting recordings and published agenda packets. For official, legally binding records, please visit the City Clerk's office.
+                  </p>
+                </div>
               </div>
-            ))}
+            </div>
+
+            {/* Methodology & Curation Section */}
+            <div className="bg-white p-10 rounded-[44px] border border-blue-50 shadow-sm">
+              <h3 className="text-2xl font-black text-slate-900 mb-6 flex items-center gap-3"><FileText className="text-blue-500" /> Curation & Methodology</h3>
+              <div className="space-y-4 text-slate-600 text-lg leading-relaxed font-medium">
+                <p>
+                  The goal of this tracker is to highlight high impact decisions regarding city policy, financial contracts, and community infrastructure. 
+                </p>
+                <p>
+                  To keep the Insight Hub focused on substantive data, <span className="text-slate-900 font-bold">purely procedural items</span> (such as the approval of meeting minutes, invocation, or adjournment) are generally excluded from this tracker. 
+                </p>
+              </div>
+            </div>
+
+            {/* Open Source & Contact Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+               <div className="bg-slate-900 text-white p-10 rounded-[44px] shadow-xl relative overflow-hidden group">
+                  <div className="absolute -bottom-6 -right-6 text-slate-800 transition-transform group-hover:scale-110"><Github size={140} /></div>
+                  <div className="relative z-10">
+                    <h3 className="text-2xl font-black mb-4 flex items-center gap-3"><Code className="text-blue-400" /> Open Source</h3>
+                    <p className="text-slate-400 mb-8 font-medium">
+                      CivicWatch is built in support of a free internet. The code is available for any resident in any city to use for their own community.
+                    </p>
+                    <a href="https://github.com/Anarchyhehe/coa-tracker" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-black transition-all shadow-lg shadow-blue-900/40">
+                      <Github size={20} /> Report via GitHub
+                    </a>
+                  </div>
+               </div>
+
+               <div className="bg-white p-10 rounded-[44px] border border-slate-100 shadow-sm flex flex-col justify-between">
+                  <div>
+                    <h3 className="text-2xl font-black text-slate-900 mb-4 flex items-center gap-3"><MessagesSquare className="text-orange-500" /> Get in Touch</h3>
+                    <p className="text-slate-500 font-medium mb-6">
+                      For questions regarding data accuracy, suggestions for new categories, or collaboration requests.
+                    </p>
+                  </div>
+                  <a href="mailto:alamogordocivicwatch@gmail.com" className="w-full flex items-center justify-center gap-3 bg-slate-100 hover:bg-slate-200 text-slate-900 px-6 py-4 rounded-3xl font-black transition-all">
+                    <Mail size={20} /> alamogordocivicwatch@gmail.com
+                  </a>
+               </div>
+            </div>
           </div>
         )}
 
         {/* --- MODALS --- */}
 
         {(isAddingMeeting || editingMeeting) && (
-          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 md:p-8 animate-in fade-in">
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[100] flex items-center justify-center p-4 md:p-8 animate-in fade-in">
             <div className="bg-white rounded-[32px] md:rounded-[56px] w-full max-w-2xl p-6 md:p-12 shadow-2xl max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-10"><h3 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">{editingMeeting ? "Configure Session Bench" : "New Meeting Date"}</h3><button onClick={() => {setIsAddingMeeting(false); setEditingMeeting(null);}} className="text-slate-300 hover:text-slate-600"><X size={32}/></button></div>
               <form onSubmit={handleMeetingSubmit} className="space-y-8">
@@ -656,25 +778,25 @@ export default function App() {
         )}
 
         {(isAddingItemToMeeting || editingItem) && (
-          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[60] flex items-center justify-center p-4 md:p-8 animate-in fade-in">
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[110] flex items-center justify-center p-4 md:p-8 animate-in fade-in">
             <div className="bg-white rounded-[32px] md:rounded-[56px] w-full max-w-2xl p-6 md:p-12 shadow-2xl max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-10"><h3 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">{editingItem ? "Edit Agenda Item" : "Add Agenda Item"}</h3><button onClick={() => {setIsAddingItemToMeeting(null); setEditingItem(null);}} className="text-slate-300 hover:text-slate-600"><X size={32}/></button></div>
               <form onSubmit={handleItemSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                   <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</label><input name="category" placeholder="e.g. Personnel" defaultValue={editingItem?.itemData.category} required className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none focus:border-blue-500" /></div>
+                   <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</label><input name="category" placeholder="e.g. Finance" defaultValue={editingItem?.itemData.category} required className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none focus:border-blue-500" /></div>
                    <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Outcome</label><select name="status" defaultValue={editingItem?.itemData.status || "Upcoming"} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none"><option value="Upcoming">Upcoming</option><option value="Passed">Passed</option><option value="Failed">Failed</option><option value="Tabled">Tabled</option><option value="N/A (No Vote Required)">N/A (No Vote Required)</option></select></div>
                 </div>
                 <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Agenda Title</label><input name="title" placeholder="Official Title" required defaultValue={editingItem?.itemData.title} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-lg outline-none" /></div>
                 <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">YouTube Segment URL (Optional)</label><input name="timestampUrl" placeholder="https://..." defaultValue={editingItem?.itemData.timestampUrl} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none" /></div>
                 <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Public Summary</label><textarea name="description" placeholder="Description..." rows="4" defaultValue={editingItem?.itemData.description} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-3xl text-lg outline-none"></textarea></div>
-                <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-[24px] font-black text-xl shadow-2xl">Save Item</button>
+                <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-[24px] font-black text-xl shadow-2xl transition-transform active:scale-95">Save Item</button>
               </form>
             </div>
           </div>
         )}
 
         {(isAddingCommissioner || editingCommissioner) && (
-          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 md:p-8 animate-in fade-in">
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[100] flex items-center justify-center p-4 md:p-8 animate-in fade-in">
             <div className="bg-white rounded-[32px] md:rounded-[56px] w-full max-w-2xl p-6 md:p-12 shadow-2xl max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-10"><h3 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">{editingCommissioner ? "Update Profile" : "New Member"}</h3><button onClick={() => {setIsAddingCommissioner(false); setEditingCommissioner(null);}} className="text-slate-300 hover:text-slate-600"><X size={32}/></button></div>
               <form onSubmit={handleCommissionerSubmit} className="space-y-6">
@@ -700,7 +822,7 @@ export default function App() {
         )}
 
         {isLoginModalOpen && (
-          <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[100] flex items-center justify-center p-6 animate-in fade-in">
+          <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[200] flex items-center justify-center p-6 animate-in fade-in">
             <div className="bg-white rounded-[40px] w-full max-w-md p-10 shadow-2xl relative"><div className="flex justify-between items-center mb-10"><h3 className="text-3xl font-black text-slate-900 tracking-tight">Admin Portal</h3><button onClick={() => setIsLoginModalOpen(false)} className="text-slate-300 hover:text-slate-600"><X size={32}/></button></div>{loginError && (<div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600 text-sm font-bold"><AlertCircle size={20} /> {loginError}</div>)}<form onSubmit={handleLogin} className="space-y-6"><input name="email" type="email" required placeholder="Email" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-blue-500 font-bold" /><input name="password" type="password" required placeholder="Password" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-blue-500 font-bold" /><button type="submit" disabled={isLoggingIn} className="w-full bg-slate-900 text-white py-5 rounded-[24px] font-black text-lg disabled:opacity-50 transition-transform active:scale-95">{isLoggingIn ? "Signing In..." : "Log In"}</button></form></div>
           </div>
         )}
