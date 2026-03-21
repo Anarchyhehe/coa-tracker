@@ -16,6 +16,7 @@ import {
   signOut,
   onAuthStateChanged 
 } from 'firebase/auth';
+import { getAnalytics, logEvent } from 'firebase/analytics';
 import { 
   PieChart, 
   Pie, 
@@ -84,6 +85,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const analytics = getAnalytics(app);
 const appId = "coa-commission-tracker";
 
 export default function App() {
@@ -105,6 +107,17 @@ export default function App() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const isAdmin = user && !user.isAnonymous;
+
+  // Track page views on tab changes
+  useEffect(() => {
+    if (analytics) {
+      logEvent(analytics, 'page_view', {
+        page_title: activeTab,
+        page_location: window.location.href,
+        page_path: `/${activeTab}`
+      });
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -648,7 +661,7 @@ export default function App() {
                                   {activeComms.map(comm => (
                                     <div key={comm.id} className="text-center group/voter">
                                       <img src={comm.image} className="w-12 h-12 md:w-16 md:h-16 rounded-[16px] md:rounded-[20px] mx-auto object-cover border-4 border-white shadow-xl mb-3 transition-all group-hover/voter:scale-110" alt="" />
-                                      <p className="text-[10px] md:text-xs font-black text-slate-700 truncate mb-3">{comm.name.split(' ').pop()}</p>
+                                      <p className="text-[10px] md:text-xs font-black text-slate-700 truncate px-2 mb-3">{comm.name.split(' ').pop()}</p>
                                       {isAdmin ? (
                                         <button onClick={() => updateVote(meeting.id, idx, comm.id, item.votes[comm.id])} className={`text-[10px] font-black px-4 py-1.5 rounded-xl text-white shadow-md active:scale-90 w-full ${
                                           item.votes[comm.id] === 'Yes' ? 'bg-green-600' : 
@@ -753,15 +766,15 @@ export default function App() {
         {/* --- MODALS --- */}
 
         {(isAddingMeeting || editingMeeting) && (
-          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[100] flex items-center justify-center p-4 md:p-8 animate-in fade-in">
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[100] flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
             <div className="bg-white rounded-[32px] md:rounded-[56px] w-full max-w-2xl p-6 md:p-12 shadow-2xl max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-10"><h3 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">{editingMeeting ? "Configure Session Bench" : "New Meeting Date"}</h3><button onClick={() => {setIsAddingMeeting(false); setEditingMeeting(null);}} className="text-slate-300 hover:text-slate-600"><X size={32}/></button></div>
+              <div className="flex justify-between items-center mb-10"><h3 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">{editingMeeting ? "Configure Session Bench" : "New Meeting Date"}</h3><button onClick={() => {setIsAddingMeeting(false); setEditingMeeting(null);}} className="text-slate-300 hover:text-slate-600 transition-colors"><X size={32}/></button></div>
               <form onSubmit={handleMeetingSubmit} className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date</label><input name="date" type="date" required defaultValue={editingMeeting?.date} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-[20px] font-bold outline-none" /></div>
-                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Title</label><input name="title" placeholder="e.g. Special Meeting" required defaultValue={editingMeeting?.title} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-[20px] font-bold outline-none" /></div>
+                  <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Date of Meeting</label><input name="date" type="date" required defaultValue={editingMeeting?.date} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] outline-none focus:border-blue-500 transition-all font-bold" /></div>
+                  <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Title</label><input name="title" placeholder="e.g. Special Meeting" required defaultValue={editingMeeting?.title} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] outline-none focus:border-blue-500 transition-all font-bold" /></div>
                 </div>
-                <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">YouTube Recording URL</label><input name="youtubeUrl" placeholder="https://..." defaultValue={editingMeeting?.youtubeUrl} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-[20px] font-bold outline-none" /></div>
+                <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">YouTube Recording URL</label><input name="youtubeUrl" placeholder="https://..." defaultValue={editingMeeting?.youtubeUrl} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] outline-none focus:border-blue-500 transition-all font-bold" /></div>
                 <div className="bg-slate-50 p-6 md:p-8 rounded-[32px] border border-slate-100">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Bench Selection (Who was seated?)</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -778,9 +791,9 @@ export default function App() {
         )}
 
         {(isAddingItemToMeeting || editingItem) && (
-          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[110] flex items-center justify-center p-4 md:p-8 animate-in fade-in">
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[110] flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
             <div className="bg-white rounded-[32px] md:rounded-[56px] w-full max-w-2xl p-6 md:p-12 shadow-2xl max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-10"><h3 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">{editingItem ? "Edit Agenda Item" : "Add Agenda Item"}</h3><button onClick={() => {setIsAddingItemToMeeting(null); setEditingItem(null);}} className="text-slate-300 hover:text-slate-600"><X size={32}/></button></div>
+              <div className="flex justify-between items-center mb-10"><h3 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">{editingItem ? "Edit Agenda Item" : "Add Agenda Item"}</h3><button onClick={() => {setIsAddingItemToMeeting(null); setEditingItem(null);}} className="text-slate-300 hover:text-slate-600 transition-colors"><X size={32}/></button></div>
               <form onSubmit={handleItemSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                    <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</label><input name="category" placeholder="e.g. Finance" defaultValue={editingItem?.itemData.category} required className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none focus:border-blue-500" /></div>
@@ -796,25 +809,25 @@ export default function App() {
         )}
 
         {(isAddingCommissioner || editingCommissioner) && (
-          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[100] flex items-center justify-center p-4 md:p-8 animate-in fade-in">
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[100] flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
             <div className="bg-white rounded-[32px] md:rounded-[56px] w-full max-w-2xl p-6 md:p-12 shadow-2xl max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-10"><h3 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">{editingCommissioner ? "Update Profile" : "New Member"}</h3><button onClick={() => {setIsAddingCommissioner(false); setEditingCommissioner(null);}} className="text-slate-300 hover:text-slate-600"><X size={32}/></button></div>
+              <div className="flex justify-between items-center mb-10"><h3 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">{editingCommissioner ? "Update Profile" : "New Member"}</h3><button onClick={() => {setIsAddingCommissioner(false); setEditingCommissioner(null);}} className="text-slate-300 hover:text-slate-600 transition-colors"><X size={32}/></button></div>
               <form onSubmit={handleCommissionerSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label><input name="name" required defaultValue={editingCommissioner?.name} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none" /></div>
-                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">District</label><input name="district" required defaultValue={editingCommissioner?.district} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none" /></div>
-                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Title / Role</label><input name="role" placeholder="e.g. Mayor" defaultValue={editingCommissioner?.role} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none" /></div>
-                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Current Term</label><input name="currentTerm" defaultValue={editingCommissioner?.currentTerm} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none" /></div>
+                  <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label><input name="name" required defaultValue={editingCommissioner?.name} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] outline-none focus:border-blue-500 font-bold" /></div>
+                  <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">District</label><input name="district" required defaultValue={editingCommissioner?.district} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] outline-none focus:border-blue-500 font-bold" /></div>
+                  <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Title / Role</label><input name="role" placeholder="e.g. Mayor" defaultValue={editingCommissioner?.role} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] outline-none focus:border-blue-500 font-bold" /></div>
+                  <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Current Term</label><input name="currentTerm" defaultValue={editingCommissioner?.currentTerm} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] outline-none focus:border-blue-500 font-bold" /></div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Assumed Office</label><input name="assumedOffice" type="date" defaultValue={editingCommissioner?.assumedOffice} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none" /></div>
-                  <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Term Expires</label><input name="termExpires" type="date" defaultValue={editingCommissioner?.termExpires} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none" /></div>
+                  <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Assumed Office</label><input name="assumedOffice" type="date" defaultValue={editingCommissioner?.assumedOffice} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] outline-none focus:border-blue-500 font-bold" /></div>
+                  <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Term Expires</label><input name="termExpires" type="date" defaultValue={editingCommissioner?.termExpires} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] outline-none focus:border-blue-500 font-bold" /></div>
                 </div>
                 <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border-2 border-slate-100">
                    <input type="checkbox" name="isActive" id="isActive" defaultChecked={editingCommissioner?.isActive ?? true} className="w-6 h-6 rounded border-slate-300 text-blue-600" />
                    <label htmlFor="isActive" className="text-sm font-black text-slate-700 uppercase tracking-widest">Active Commissioner</label>
                 </div>
-                <input name="image" placeholder="Photo URL" defaultValue={editingCommissioner?.image} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold outline-none" />
+                <input name="image" placeholder="Photo URL" defaultValue={editingCommissioner?.image} className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-[28px] outline-none focus:border-blue-500 font-bold" />
                 <button type="submit" className="w-full bg-orange-500 text-white py-5 rounded-[24px] font-black text-xl shadow-2xl transition-transform active:scale-95">Save Member Archive</button>
               </form>
             </div>
@@ -822,8 +835,8 @@ export default function App() {
         )}
 
         {isLoginModalOpen && (
-          <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[200] flex items-center justify-center p-6 animate-in fade-in">
-            <div className="bg-white rounded-[40px] w-full max-w-md p-10 shadow-2xl relative"><div className="flex justify-between items-center mb-10"><h3 className="text-3xl font-black text-slate-900 tracking-tight">Admin Portal</h3><button onClick={() => setIsLoginModalOpen(false)} className="text-slate-300 hover:text-slate-600"><X size={32}/></button></div>{loginError && (<div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600 text-sm font-bold"><AlertCircle size={20} /> {loginError}</div>)}<form onSubmit={handleLogin} className="space-y-6"><input name="email" type="email" required placeholder="Email" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-blue-500 font-bold" /><input name="password" type="password" required placeholder="Password" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-blue-500 font-bold" /><button type="submit" disabled={isLoggingIn} className="w-full bg-slate-900 text-white py-5 rounded-[24px] font-black text-lg disabled:opacity-50 transition-transform active:scale-95">{isLoggingIn ? "Signing In..." : "Log In"}</button></form></div>
+          <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
+            <div className="bg-white rounded-[40px] w-full max-w-md p-10 shadow-2xl relative"><div className="flex justify-between items-center mb-10"><h3 className="text-3xl font-black text-slate-900 tracking-tight">Admin Portal</h3><button onClick={() => setIsLoginModalOpen(false)} className="text-slate-300 hover:text-slate-600 transition-colors"><X size={32}/></button></div>{loginError && (<div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600 text-sm font-bold"><AlertCircle size={20} /> {loginError}</div>)}<form onSubmit={handleLogin} className="space-y-6"><input name="email" type="email" required placeholder="Email" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-blue-500 font-bold" /><input name="password" type="password" required placeholder="Password" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-blue-500 font-bold" /><button type="submit" disabled={isLoggingIn} className="w-full bg-slate-900 text-white py-5 rounded-[24px] font-black text-lg disabled:opacity-50 transition-transform active:scale-95">{isLoggingIn ? "Signing In..." : "Log In"}</button></form></div>
           </div>
         )}
       </main>
