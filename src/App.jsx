@@ -71,7 +71,9 @@ import {
   MessagesSquare,
   Construction,
   Moon,
-  Sun
+  Sun,
+  Ban,
+  UserMinus
 } from 'lucide-react';
 
 // --- FIREBASE CONFIGURATION ---
@@ -90,6 +92,13 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const analytics = getAnalytics(app);
 const appId = "coa-commission-tracker";
+
+// Helper for date formatting
+const formatDate = (dateStr) => {
+  if (!dateStr) return "TBD";
+  const [year, month, day] = dateStr.split('-');
+  return `${month}/${day}/${year}`;
+};
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -243,10 +252,12 @@ export default function App() {
     const meeting = meetings.find(m => m.id === meetingId);
     const updatedItems = [...meeting.items];
     
+    // Cycle: Yes -> No -> Absent -> Abstain -> Recused
     let nextVote = "Yes";
     if (current === "Yes") nextVote = "No";
     else if (current === "No") nextVote = "Absent";
-    else if (current === "Absent") nextVote = "N/A";
+    else if (current === "Absent") nextVote = "Abstain";
+    else if (current === "Abstain") nextVote = "Recused";
 
     updatedItems[itemIndex].votes[commId] = nextVote;
     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meetingId), { items: updatedItems });
@@ -261,6 +272,7 @@ export default function App() {
   const dashboardStats = useMemo(() => {
     const allItems = meetings.flatMap(m => (m.items || []).map(i => ({ 
       ...i, 
+      meetingId: m.id,
       date: m.date, 
       activeVoterIds: m.activeCommissionerIds || [] 
     })));
@@ -272,7 +284,7 @@ export default function App() {
       const activeVotes = Object.entries(item.votes)
         .filter(([id]) => item.activeVoterIds.includes(id))
         .map(([_, v]) => v)
-        .filter(v => v !== "N/A" && v !== "Absent");
+        .filter(v => v !== "Abstain" && v !== "Absent" && v !== "Recused" && v !== "N/A");
 
       if (activeVotes.length > 0 && activeVotes.every(v => v === activeVotes[0])) {
         unanimousCount++;
@@ -282,26 +294,40 @@ export default function App() {
     const catMap = {};
     allItems.forEach(item => {
       if (!catMap[item.category]) catMap[item.category] = { name: item.category, Passed: 0, Failed: 0, Tabled: 0, Upcoming: 0, "N/A": 0 };
-      const key = item.status === "N/A (No Vote Required)" ? "N/A" : item.status;
+      const key = (item.status === "N/A (No Vote Required)" || item.status === "Abstain") ? "N/A" : item.status;
       catMap[item.category][key]++;
     });
 
     const commPerformance = commissioners.map(comm => {
-      let yes = 0, no = 0, na = 0, absent = 0, totalItemsPossible = 0;
+      let yes = 0, no = 0, abstain = 0, absentVotes = 0, recused = 0;
       
-      votingItems.forEach(item => {
-        if (item.activeVoterIds.includes(comm.id)) {
-          totalItemsPossible++;
-          const v = item.votes[comm.id];
-          if (v === "Yes") yes++;
-          else if (v === "No") no++;
-          else if (v === "Absent") absent++;
-          else na++;
+      // Track meeting attendance (one absence per meeting max)
+      let meetingsAssigned = 0;
+      let meetingsAbsent = 0;
+
+      meetings.forEach(meeting => {
+        const assigned = (meeting.activeCommissionerIds || []).includes(comm.id);
+        if (assigned) {
+          meetingsAssigned++;
+          const items = meeting.items || [];
+          // If they are marked absent for ANY item in this meeting, they are absent for the meeting
+          const wasAbsent = items.some(item => item.votes[comm.id] === "Absent");
+          if (wasAbsent) meetingsAbsent++;
+          
+          // Still count the specific vote types for the breakdown
+          items.forEach(item => {
+            const v = item.votes[comm.id];
+            if (v === "Yes") yes++;
+            else if (v === "No") no++;
+            else if (v === "Abstain") abstain++;
+            else if (v === "Recused") recused++;
+            else if (v === "Absent") absentVotes++;
+          });
         }
       });
 
       const totalActiveVotes = yes + no;
-      const attendance = totalItemsPossible > 0 ? Math.round(((totalItemsPossible - absent) / totalItemsPossible) * 100) : 0;
+      const participation = meetingsAssigned > 0 ? Math.round(((meetingsAssigned - meetingsAbsent) / meetingsAssigned) * 100) : 0;
       const yesRate = totalActiveVotes > 0 ? Math.round((yes / totalActiveVotes) * 100) : 0;
 
       return {
@@ -310,8 +336,8 @@ export default function App() {
         district: comm.district,
         isActive: comm.isActive,
         yesRate,
-        participation: attendance,
-        votes: { yes, no, absent, na }
+        participation,
+        votes: { yes, no, abstain, absentVotes, recused }
       };
     });
 
@@ -387,11 +413,7 @@ export default function App() {
             <span className="text-[10px] font-black uppercase tracking-tighter">{tab.label}</span>
           </button>
         ))}
-        {/* Mobile Theme Toggle in Nav */}
-        <button 
-          onClick={() => setIsDarkMode(!isDarkMode)} 
-          className={`flex flex-col items-center gap-1 transition-colors ${isDarkMode ? 'text-orange-400' : 'text-blue-600'}`}
-        >
+        <button onClick={() => setIsDarkMode(!isDarkMode)} className={`flex flex-col items-center gap-1 transition-colors ${isDarkMode ? 'text-orange-400' : 'text-blue-600'}`}>
           {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
           <span className="text-[10px] font-black uppercase tracking-tighter">Theme</span>
         </button>
@@ -408,9 +430,7 @@ export default function App() {
           <div className="flex flex-wrap gap-3">
             {isAdmin && activeTab === 'meetings' && (<button onClick={() => setIsAddingMeeting(true)} className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-black flex items-center gap-2 hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all text-sm"><Plus size={18} /> New Date</button>)}
             {isAdmin && activeTab === 'commissioners' && (<button onClick={() => setIsAddingCommissioner(true)} className="bg-orange-500 text-white px-5 py-2.5 rounded-xl font-black flex items-center gap-2 hover:bg-orange-600 shadow-lg shadow-orange-500/20 transition-all text-sm"><Plus size={18} /> New Member</button>)}
-            <div className="md:hidden">
-              {isAdmin ? (<button onClick={handleLogout} className="bg-slate-800 text-white px-4 py-2.5 rounded-xl font-black flex items-center gap-2 text-sm"><LogOut size={16} /> Logout</button>) : (<button onClick={() => setIsLoginModalOpen(true)} className="bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl font-black flex items-center gap-2 text-sm"><LogIn size={16} /> Admin Login</button>)}
-            </div>
+            <div className="md:hidden">{isAdmin ? (<button onClick={handleLogout} className="bg-slate-800 text-white px-4 py-2.5 rounded-xl font-black flex items-center gap-2 text-sm"><LogOut size={16} /> Logout</button>) : (<button onClick={() => setIsLoginModalOpen(true)} className="bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl font-black flex items-center gap-2 text-sm"><LogIn size={16} /> Admin Login</button>)}</div>
           </div>
         </header>
 
@@ -531,13 +551,13 @@ export default function App() {
                             <CalendarDays size={16} className="text-blue-500" />
                             <div>
                               <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Assumed Office</p>
-                              <p className={`text-xs font-bold ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>{comm.assumedOffice || "Not Set"}</p>
+                              <p className={`text-xs font-bold ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>{formatDate(comm.assumedOffice)}</p>
                             </div>
                           </div>
                         </div>
                         <div className={`mt-4 p-3 rounded-2xl flex justify-between items-center px-5 transition-colors ${isDarkMode ? 'bg-slate-800 text-slate-200' : 'bg-slate-900 text-white'}`}>
                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Term Expires</p>
-                           <p className="text-xs font-bold">{comm.termExpires || "TBD"}</p>
+                           <p className="text-xs font-bold">{formatDate(comm.termExpires)}</p>
                         </div>
                       </div>
                     </div>
@@ -573,11 +593,11 @@ export default function App() {
                       <div className={`space-y-1 pt-2 border-t ${isDarkMode ? 'border-slate-800' : 'border-slate-50'}`}>
                          <div className="flex justify-between text-[9px] font-black text-slate-400 uppercase tracking-tighter">
                             <span>Assumed Office</span>
-                            <span className={isDarkMode ? 'text-slate-500' : 'text-slate-600'}>{comm.assumedOffice || 'Unknown'}</span>
+                            <span className={isDarkMode ? 'text-slate-500' : 'text-slate-600'}>{formatDate(comm.assumedOffice)}</span>
                          </div>
                          <div className="flex justify-between text-[9px] font-black text-slate-400 uppercase tracking-tighter">
                             <span>Term Ended</span>
-                            <span className={isDarkMode ? 'text-slate-500' : 'text-slate-600'}>{comm.termExpires || 'Unknown'}</span>
+                            <span className={isDarkMode ? 'text-slate-500' : 'text-slate-600'}>{formatDate(comm.termExpires)}</span>
                          </div>
                       </div>
                     </div>
@@ -589,32 +609,32 @@ export default function App() {
         )}
 
         {activeTab === 'meetings' && (
-          <div className="space-y-6 animate-in fade-in duration-500">
+          <div className="space-y-8 animate-in fade-in duration-500">
             {meetings.map(meeting => {
               const isExpanded = expandedMeetings.includes(meeting.id);
               return (
                 <div key={meeting.id} className={`rounded-[44px] border transition-all duration-300 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} ${isExpanded ? (isDarkMode ? 'border-blue-900/40 shadow-2xl' : 'border-blue-100 shadow-xl') : 'shadow-sm hover:border-slate-400/20'}`}>
                   <div 
                     onClick={() => toggleMeetingCollapse(meeting.id)}
-                    className={`p-6 md:p-10 cursor-pointer flex flex-col md:flex-row items-start md:items-center justify-between gap-4 select-none ${isExpanded ? (isDarkMode ? 'bg-slate-800/20 rounded-t-[44px] border-b border-slate-800' : 'bg-slate-50/50 rounded-t-[44px] border-b border-slate-100') : 'rounded-[44px]'}`}
+                    className={`p-8 md:p-12 cursor-pointer flex flex-col md:flex-row items-start md:items-center justify-between gap-6 select-none ${isExpanded ? (isDarkMode ? 'bg-slate-800/20 rounded-t-[44px] border-b border-slate-800' : 'bg-slate-50/50 rounded-t-[44px] border-b border-slate-100') : 'rounded-[44px]'}`}
                   >
-                    <div className="flex items-center gap-5">
-                      <div className={`p-4 rounded-2xl transition-colors ${isExpanded ? 'bg-blue-600 text-white' : (isDarkMode ? 'bg-slate-800 text-slate-600' : 'bg-slate-100 text-slate-400')}`}>
-                        <Calendar size={24} />
+                    <div className="flex items-center gap-6">
+                      <div className={`p-5 rounded-3xl transition-colors ${isExpanded ? 'bg-blue-600 text-white' : (isDarkMode ? 'bg-slate-800 text-slate-600' : 'bg-slate-100 text-slate-400')}`}>
+                        <Calendar size={32} />
                       </div>
                       <div>
-                        <div className="flex items-center gap-3">
-                          <h3 className={`font-black text-2xl leading-none ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{meeting.title}</h3>
+                        <div className="flex items-center gap-4">
+                          <h3 className={`font-black text-3xl leading-none ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{meeting.title}</h3>
                           {meeting.youtubeUrl && (
                             <a href={meeting.youtubeUrl} target="_blank" rel="noopener noreferrer" className="text-red-600 hover:text-red-700 transition-colors" onClick={(e) => e.stopPropagation()} title="Watch Meeting on YouTube">
-                              <Youtube size={24} />
+                              <Youtube size={32} />
                             </a>
                           )}
                         </div>
-                        <div className="flex items-center gap-3 mt-2">
-                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{meeting.date}</p>
-                           <span className="text-slate-300">•</span>
-                           <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest">{meeting.items?.length || 0} Agenda Items</p>
+                        <div className="flex items-center gap-4 mt-3">
+                           <p className="text-lg font-black text-blue-600 uppercase tracking-widest">{formatDate(meeting.date)}</p>
+                           <span className="text-slate-300 text-xl">•</span>
+                           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{meeting.items?.length || 0} Agenda Items</p>
                         </div>
                       </div>
                     </div>
@@ -628,7 +648,7 @@ export default function App() {
                         </div>
                       )}
                       <div className="p-2 text-slate-300">
-                         {isExpanded ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
+                         {isExpanded ? <ChevronUp size={32} /> : <ChevronDown size={32} />}
                       </div>
                     </div>
                   </div>
@@ -688,33 +708,39 @@ export default function App() {
                                 </div>
                               ) : (
                                 <div className={`p-6 md:p-8 rounded-[32px] md:rounded-[40px] grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-6 transition-colors ${isDarkMode ? 'bg-slate-950/50' : 'bg-slate-50/70'}`}>
-                                  {activeComms.map(comm => (
-                                    <div key={comm.id} className="text-center group/voter">
-                                      <img src={comm.image} className={`w-12 h-12 md:w-16 md:h-16 rounded-[16px] md:rounded-[20px] mx-auto object-cover border-4 shadow-xl mb-3 transition-all group-hover/voter:scale-110 ${isDarkMode ? 'border-slate-800 shadow-slate-950/40' : 'border-white shadow-slate-200'}`} alt="" />
-                                      <p className={`text-[10px] md:text-xs font-black truncate px-2 mb-3 ${isDarkMode ? 'text-slate-400' : 'text-slate-700'}`}>{comm.name.split(' ').pop()}</p>
-                                      {isAdmin ? (
-                                        <button onClick={() => updateVote(meeting.id, idx, comm.id, item.votes[comm.id])} className={`text-[10px] font-black px-4 py-1.5 rounded-xl text-white shadow-md active:scale-90 w-full transition-colors ${
-                                          item.votes[comm.id] === 'Yes' ? 'bg-green-600' : 
-                                          item.votes[comm.id] === 'No' ? 'bg-red-600' : 
-                                          item.votes[comm.id] === 'Absent' ? 'bg-purple-600' : 
-                                          'bg-slate-400'
-                                        }`}>{item.votes[comm.id] || "N/A"}</button>
-                                      ) : (
-                                        <div className={`text-[10px] font-black flex items-center justify-center gap-1 transition-colors ${
-                                          item.votes[comm.id] === 'Yes' ? 'text-green-500' : 
-                                          item.votes[comm.id] === 'No' ? 'text-red-500' : 
-                                          item.votes[comm.id] === 'Absent' ? 'text-purple-500' : 
-                                          'text-slate-500 italic'
-                                        }`}>
-                                          {item.votes[comm.id] === 'Yes' ? <CheckCircle size={12}/> : 
-                                           item.votes[comm.id] === 'No' ? <XCircle size={12}/> : 
-                                           item.votes[comm.id] === 'Absent' ? <UserX size={12}/> : 
-                                           <Clock size={12}/>} 
-                                          {item.votes[comm.id] || "N/A"}
-                                        </div>
-                                      )}
-                                    </div>
-                                  ))}
+                                  {activeComms.map(comm => {
+                                    const vote = item.votes[comm.id] || "Abstain";
+                                    return (
+                                      <div key={comm.id} className="text-center group/voter">
+                                        <img src={comm.image} className={`w-12 h-12 md:w-16 md:h-16 rounded-[16px] md:rounded-[20px] mx-auto object-cover border-4 shadow-xl mb-3 transition-all group-hover/voter:scale-110 ${isDarkMode ? 'border-slate-800 shadow-slate-950/40' : 'border-white shadow-slate-200'}`} alt="" />
+                                        <p className={`text-[10px] md:text-xs font-black truncate px-2 mb-3 ${isDarkMode ? 'text-slate-400' : 'text-slate-700'}`}>{comm.name.split(' ').pop()}</p>
+                                        {isAdmin ? (
+                                          <button onClick={() => updateVote(meeting.id, idx, comm.id, vote)} className={`text-[10px] font-black px-4 py-1.5 rounded-xl text-white shadow-md active:scale-90 w-full transition-colors ${
+                                            vote === 'Yes' ? 'bg-green-600' : 
+                                            vote === 'No' ? 'bg-red-600' : 
+                                            vote === 'Absent' ? 'bg-purple-600' : 
+                                            vote === 'Recused' ? 'bg-orange-600' :
+                                            'bg-slate-400'
+                                          }`}>{vote}</button>
+                                        ) : (
+                                          <div className={`text-[10px] font-black flex items-center justify-center gap-1 transition-colors ${
+                                            vote === 'Yes' ? 'text-green-500' : 
+                                            vote === 'No' ? 'text-red-500' : 
+                                            vote === 'Absent' ? 'text-purple-500' : 
+                                            vote === 'Recused' ? 'text-orange-500' :
+                                            'text-slate-500 italic'
+                                          }`}>
+                                            {vote === 'Yes' ? <CheckCircle size={12}/> : 
+                                             vote === 'No' ? <XCircle size={12}/> : 
+                                             vote === 'Absent' ? <UserMinus size={12}/> : 
+                                             vote === 'Recused' ? <Ban size={12}/> :
+                                             <Clock size={12}/>} 
+                                            {vote}
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               )}
                             </div>
