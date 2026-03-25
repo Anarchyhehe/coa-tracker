@@ -35,7 +35,6 @@ import {
   Users, 
   CheckCircle, 
   XCircle, 
-  MinusCircle,
   Calendar,
   LayoutDashboard,
   Database,
@@ -73,7 +72,9 @@ import {
   Moon,
   Sun,
   Ban,
-  UserMinus
+  UserMinus,
+  Phone,
+  Link as LinkIcon
 } from 'lucide-react';
 
 // --- FIREBASE CONFIGURATION ---
@@ -93,10 +94,12 @@ const db = getFirestore(app);
 const analytics = getAnalytics(app);
 const appId = "coa-commission-tracker";
 
-// Helper for date formatting
+// Helper for date formatting to MM/DD/YYYY
 const formatDate = (dateStr) => {
   if (!dateStr) return "TBD";
-  const [year, month, day] = dateStr.split('-');
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return dateStr;
+  const [year, month, day] = parts;
   return `${month}/${day}/${year}`;
 };
 
@@ -107,6 +110,7 @@ export default function App() {
   const [commissioners, setCommissioners] = useState([]);
   const [meetings, setMeetings] = useState([]);
   const [expandedMeetings, setExpandedMeetings] = useState([]);
+  const [hasInitializedExpansion, setHasInitializedExpansion] = useState(false);
   
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isAddingMeeting, setIsAddingMeeting] = useState(false);
@@ -121,7 +125,7 @@ export default function App() {
 
   const isAdmin = user && !user.isAnonymous;
 
-  // Track page views on tab changes
+  // Track page views
   useEffect(() => {
     if (analytics) {
       logEvent(analytics, 'page_view', {
@@ -155,15 +159,20 @@ export default function App() {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       const sorted = data.sort((a, b) => new Date(b.date) - new Date(a.date));
       setMeetings(sorted);
-      if (sorted.length > 0 && expandedMeetings.length === 0) {
-        setExpandedMeetings([sorted[0].id]);
-      }
     }, (err) => console.error("Firestore error:", err));
     return () => {
       unsubscribeComm();
       unsubscribeMeet();
     };
   }, [user]);
+
+  // Handle initial expansion once
+  useEffect(() => {
+    if (meetings.length > 0 && !hasInitializedExpansion) {
+      setExpandedMeetings([meetings[0].id]);
+      setHasInitializedExpansion(true);
+    }
+  }, [meetings, hasInitializedExpansion]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -189,7 +198,9 @@ export default function App() {
       party: formData.get('party') || "Non-partisan",
       assumedOffice: formData.get('assumedOffice'),
       termExpires: formData.get('termExpires'),
-      currentTerm: formData.get('currentTerm')
+      currentTerm: formData.get('currentTerm'),
+      email: formData.get('email'),
+      phone: formData.get('phone')
     };
     if (editingCommissioner) {
       await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'commissioners', editingCommissioner.id), data);
@@ -209,6 +220,7 @@ export default function App() {
       date: formData.get('date'), 
       title: formData.get('title'),
       youtubeUrl: formData.get('youtubeUrl'),
+      agendaUrl: formData.get('agendaUrl'),
       activeCommissionerIds: activeIds
     };
 
@@ -252,7 +264,6 @@ export default function App() {
     const meeting = meetings.find(m => m.id === meetingId);
     const updatedItems = [...meeting.items];
     
-    // Cycle: Yes -> No -> Absent -> Abstain -> Recused
     let nextVote = "Yes";
     if (current === "Yes") nextVote = "No";
     else if (current === "No") nextVote = "Absent";
@@ -300,8 +311,6 @@ export default function App() {
 
     const commPerformance = commissioners.map(comm => {
       let yes = 0, no = 0, abstain = 0, absentVotes = 0, recused = 0;
-      
-      // Track meeting attendance (one absence per meeting max)
       let meetingsAssigned = 0;
       let meetingsAbsent = 0;
 
@@ -310,11 +319,9 @@ export default function App() {
         if (assigned) {
           meetingsAssigned++;
           const items = meeting.items || [];
-          // If they are marked absent for ANY item in this meeting, they are absent for the meeting
           const wasAbsent = items.some(item => item.votes[comm.id] === "Absent");
           if (wasAbsent) meetingsAbsent++;
           
-          // Still count the specific vote types for the breakdown
           items.forEach(item => {
             const v = item.votes[comm.id];
             if (v === "Yes") yes++;
@@ -359,7 +366,7 @@ export default function App() {
       <aside className="w-64 bg-slate-900 text-white h-screen fixed hidden md:flex flex-col p-6 shadow-2xl z-30">
         <div className="flex items-center gap-3 mb-12 px-2">
           <div className="bg-blue-600 p-2.5 rounded-2xl shadow-lg shadow-blue-500/20"><Database size={24} /></div>
-          <h1 className="font-black text-2xl tracking-tighter">CivicWatch</h1>
+          <h1 className="font-black text-2xl tracking-tighter text-white">CivicWatch</h1>
         </div>
         <nav className="space-y-2 flex-1">
           {[
@@ -537,8 +544,20 @@ export default function App() {
                              <MapPin size={12} className="text-slate-400" />
                              <span className="text-xs font-black text-slate-500 uppercase tracking-widest">{comm.district}</span>
                           </div>
-                          <span className="text-[10px] font-black text-slate-400 uppercase mt-2 block">{comm.party}</span>
                         </div>
+
+                        {/* Contact Info Section */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                          <a href={`mailto:${comm.email}`} className={`flex items-center gap-2 p-2 rounded-xl border transition-all hover:scale-105 ${isDarkMode ? 'bg-slate-800/50 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-100 text-slate-600'}`}>
+                            <Mail size={14} className="text-blue-500 shrink-0" />
+                            <span className="text-[10px] font-bold truncate">{comm.email || "No Email"}</span>
+                          </a>
+                          <a href={`tel:${comm.phone}`} className={`flex items-center gap-2 p-2 rounded-xl border transition-all hover:scale-105 ${isDarkMode ? 'bg-slate-800/50 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-100 text-slate-600'}`}>
+                            <Phone size={14} className="text-orange-500 shrink-0" />
+                            <span className="text-[10px] font-bold truncate">{comm.phone || "No Phone"}</span>
+                          </a>
+                        </div>
+
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className={`p-3 rounded-2xl border flex items-center gap-3 transition-colors ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
                             <Award size={16} className="text-orange-500" />
@@ -584,10 +603,6 @@ export default function App() {
                         <div>
                           <h4 className={`font-bold leading-tight ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>{comm.name}</h4>
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{comm.role || comm.district}</p>
-                          <div className="flex items-center gap-1 mt-1">
-                             <MapPin size={10} className="text-slate-300" />
-                             <span className="text-[10px] text-slate-400 font-bold uppercase">{comm.district}</span>
-                          </div>
                         </div>
                       </div>
                       <div className={`space-y-1 pt-2 border-t ${isDarkMode ? 'border-slate-800' : 'border-slate-50'}`}>
@@ -623,16 +638,23 @@ export default function App() {
                         <Calendar size={32} />
                       </div>
                       <div>
-                        <div className="flex items-center gap-4">
+                        <div className="flex flex-wrap items-center gap-4">
                           <h3 className={`font-black text-3xl leading-none ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{meeting.title}</h3>
-                          {meeting.youtubeUrl && (
-                            <a href={meeting.youtubeUrl} target="_blank" rel="noopener noreferrer" className="text-red-600 hover:text-red-700 transition-colors" onClick={(e) => e.stopPropagation()} title="Watch Meeting on YouTube">
-                              <Youtube size={32} />
-                            </a>
-                          )}
+                          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                            {meeting.youtubeUrl && (
+                              <a href={meeting.youtubeUrl} target="_blank" rel="noopener noreferrer" className="text-red-600 hover:text-red-700 transition-colors" title="Watch Meeting on YouTube">
+                                <Youtube size={32} />
+                              </a>
+                            )}
+                            {meeting.agendaUrl && (
+                              <a href={meeting.agendaUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-700 transition-colors" title="View Official Agenda">
+                                <LinkIcon size={28} />
+                              </a>
+                            )}
+                          </div>
                         </div>
                         <div className="flex items-center gap-4 mt-3">
-                           <p className="text-lg font-black text-blue-600 uppercase tracking-widest">{formatDate(meeting.date)}</p>
+                           <p className="text-2xl md:text-3xl font-black text-blue-600 uppercase tracking-widest">{formatDate(meeting.date)}</p>
                            <span className="text-slate-300 text-xl">•</span>
                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{meeting.items?.length || 0} Agenda Items</p>
                         </div>
@@ -756,81 +778,17 @@ export default function App() {
         )}
 
         {activeTab === 'about' && (
-          <div className="max-w-4xl space-y-10 animate-in fade-in duration-500">
-            {/* WIP Section */}
-            <div className={`p-10 rounded-[44px] shadow-xl relative overflow-hidden group transition-colors ${isDarkMode ? 'bg-slate-900 text-white' : 'bg-slate-900 text-white'}`}>
+          <div className="max-w-4xl space-y-10 animate-in fade-in duration-500 text-white">
+            <div className="p-10 rounded-[44px] shadow-xl relative overflow-hidden group transition-colors bg-slate-900">
               <div className="absolute top-0 right-0 p-8 text-slate-800 transition-transform group-hover:scale-110"><Construction size={120} /></div>
-              <div className="relative z-10">
+              <div className="relative z-10 text-white">
                 <h3 className="text-2xl font-black mb-6 flex items-center gap-3 text-orange-400"><Construction /> Work in Progress</h3>
                 <div className="space-y-4 text-slate-300 text-lg leading-relaxed font-medium">
                   <p>
                     Please note that CivicWatch is currently <span className="text-white font-bold italic">under active development.</span> This is not an exhaustive archive of all City of Alamogordo commission meetings.
                   </p>
-                  <p>
-                    As a solo project, each meeting entry is manually researched and documented during off-work hours. I am currently working through a backlog of historical meetings to provide a more complete picture of our city's legislative history.
-                  </p>
                 </div>
               </div>
-            </div>
-
-            {/* Disclaimer Section */}
-            <div className={`p-10 rounded-[44px] border shadow-sm relative overflow-hidden transition-colors ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-orange-100'}`}>
-              <div className={`absolute top-0 right-0 p-8 transition-colors ${isDarkMode ? 'text-slate-800' : 'text-orange-50'}`}><ShieldAlert size={120} /></div>
-              <div className="relative z-10">
-                <h3 className="text-2xl font-black mb-6 flex items-center gap-3 text-orange-500"><ShieldAlert /> Content Disclaimer</h3>
-                <div className={`space-y-4 text-lg leading-relaxed font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                  <p>
-                    CivicWatch is a <span className={`font-bold italic underline decoration-orange-300 text-decoration-thickness-2 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>personal passion project</span> created and maintained by Sven Sears. 
-                  </p>
-                  <p>
-                    Although the creator is an employee of the City of Alamogordo, this platform is <span className={`font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>not managed, funded, or endorsed by the City of Alamogordo.</span> 
-                  </p>
-                  <p>
-                    All data and records shown here are compiled from publicly available sources, including official city meeting recordings and published agenda packets. For official, legally binding records, please visit the City Clerk's office.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Methodology & Curation Section */}
-            <div className={`p-10 rounded-[44px] border shadow-sm transition-colors ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-blue-50'}`}>
-              <h3 className={`text-2xl font-black mb-6 flex items-center gap-3 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}><FileText className="text-blue-500" /> Curation & Methodology</h3>
-              <div className={`space-y-4 text-lg leading-relaxed font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                <p>
-                  The goal of this tracker is to highlight high impact decisions regarding city policy, financial contracts, and community infrastructure. 
-                </p>
-                <p>
-                  To keep the Insight Hub focused on substantive data, <span className={`font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>purely procedural items</span> (such as the approval of meeting minutes, invocation, or adjournment) are generally excluded from this tracker. 
-                </p>
-              </div>
-            </div>
-
-            {/* Open Source & Contact Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-               <div className={`p-10 rounded-[44px] border shadow-sm relative overflow-hidden group transition-colors ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
-                  <div className={`absolute -bottom-6 -right-6 transition-colors ${isDarkMode ? 'text-slate-800' : 'text-slate-50'}`}><Github size={140} /></div>
-                  <div className="relative z-10">
-                    <h3 className={`text-2xl font-black mb-4 flex items-center gap-3 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}><Code className="text-blue-500" /> Open Source</h3>
-                    <p className={`mb-8 font-medium ${isDarkMode ? 'text-slate-500' : 'text-slate-500'}`}>
-                      CivicWatch is built in support of a free internet. The code is available for any resident in any city to use for their own community.
-                    </p>
-                    <a href="https://github.com/Anarchyhehe/coa-tracker" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-black transition-all shadow-lg shadow-blue-900/40">
-                      <Github size={20} /> Report via GitHub
-                    </a>
-                  </div>
-               </div>
-
-               <div className={`p-10 rounded-[44px] border shadow-sm flex flex-col justify-between transition-colors ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
-                  <div>
-                    <h3 className={`text-2xl font-black mb-4 flex items-center gap-3 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}><MessagesSquare className="text-orange-500" /> Get in Touch</h3>
-                    <p className={`font-medium mb-6 ${isDarkMode ? 'text-slate-500' : 'text-slate-500'}`}>
-                      For questions regarding data accuracy, suggestions for new categories, or collaboration requests.
-                    </p>
-                  </div>
-                  <a href="mailto:alamogordocivicwatch@gmail.com" className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-3xl font-black transition-all ${isDarkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-900 hover:bg-slate-200'}`}>
-                    <Mail size={20} /> alamogordocivicwatch@gmail.com
-                  </a>
-               </div>
             </div>
           </div>
         )}
@@ -846,13 +804,16 @@ export default function App() {
                   <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Date of Meeting</label><input name="date" type="date" required defaultValue={editingMeeting?.date} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
                   <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Title</label><input name="title" placeholder="e.g. Special Meeting" required defaultValue={editingMeeting?.title} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
                 </div>
-                <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">YouTube Recording URL</label><input name="youtubeUrl" placeholder="https://..." defaultValue={editingMeeting?.youtubeUrl} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">YouTube Recording URL</label><input name="youtubeUrl" placeholder="https://..." defaultValue={editingMeeting?.youtubeUrl} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
+                  <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Official Agenda Link</label><input name="agendaUrl" placeholder="Link to PDF..." defaultValue={editingMeeting?.agendaUrl} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
+                </div>
                 <div className={`p-6 md:p-8 rounded-[32px] border transition-colors ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Bench Selection (Who was seated?)</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {commissioners.sort((a,b) => (b.isActive?1:0) - (a.isActive?1:0)).map(comm => {
                       const isActive = editingMeeting?.activeCommissionerIds?.includes(comm.id) ?? comm.isActive;
-                      return (<label key={comm.id} className={`flex items-center gap-3 p-4 rounded-2xl border cursor-pointer hover:border-blue-500 transition-all ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}><input type="checkbox" name={`active-${comm.id}`} defaultChecked={isActive} className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500" /><div className="flex items-center gap-2"><img src={comm.image} className={`w-8 h-8 rounded-full object-cover ${!comm.isActive && 'grayscale'}`} alt="" /><div><p className={`text-xs font-bold ${!comm.isActive ? 'text-slate-400 italic' : (isDarkMode ? 'text-slate-200' : 'text-slate-900')}`}>{comm.name}</p><p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">{comm.district} {!comm.isActive && '(PAST)'}</p></div></div></label>);
+                      return (<label key={comm.id} className={`flex items-center gap-3 p-4 rounded-2xl border cursor-pointer hover:border-blue-500 transition-all ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}><input type="checkbox" name={`active-${comm.id}`} defaultChecked={isActive} className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500" /><div className="flex items-center gap-2"><img src={comm.image} className={`w-8 h-8 rounded-full object-cover ${!comm.isActive && 'grayscale'}`} alt="" /><div><p className={`text-xs font-bold ${!comm.isActive ? 'text-slate-400 italic' : (isDarkMode ? 'text-slate-200' : 'text-slate-900')}`}>{comm.name}</p></div></div></label>);
                     })}
                   </div>
                 </div>
@@ -888,18 +849,24 @@ export default function App() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label><input name="name" required defaultValue={editingCommissioner?.name} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
                   <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">District</label><input name="district" required defaultValue={editingCommissioner?.district} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Title / Role</label><input name="role" placeholder="e.g. Mayor" defaultValue={editingCommissioner?.role} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
-                  <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Current Term</label><input name="currentTerm" defaultValue={editingCommissioner?.currentTerm} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
+                  <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Current Term</label><input name="currentTerm" placeholder="2nd Term" defaultValue={editingCommissioner?.currentTerm} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Public Email</label><input name="email" type="email" placeholder="example@ci.alamogordo.nm.us" defaultValue={editingCommissioner?.email} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
+                  <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Office Phone</label><input name="phone" type="tel" placeholder="(575) 439-XXXX" defaultValue={editingCommissioner?.phone} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Assumed Office</label><input name="assumedOffice" type="date" defaultValue={editingCommissioner?.assumedOffice} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
                   <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Term Expires</label><input name="termExpires" type="date" defaultValue={editingCommissioner?.termExpires} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
                 </div>
+                <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Photo URL (Optional)</label><input name="image" placeholder="https://..." defaultValue={editingCommissioner?.image} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
                 <div className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-colors ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
                    <input type="checkbox" name="isActive" id="isActive" defaultChecked={editingCommissioner?.isActive ?? true} className="w-6 h-6 rounded border-slate-300 text-blue-600" />
                    <label htmlFor="isActive" className={`text-sm font-black uppercase tracking-widest ${isDarkMode ? 'text-slate-400' : 'text-slate-700'}`}>Active Commissioner</label>
                 </div>
-                <input name="image" placeholder="Photo URL" defaultValue={editingCommissioner?.image} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} />
                 <button type="submit" className="w-full bg-orange-500 text-white py-5 rounded-[24px] font-black text-xl shadow-2xl transition-transform active:scale-95">Save Member Archive</button>
               </form>
             </div>
