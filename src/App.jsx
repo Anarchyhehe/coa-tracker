@@ -450,7 +450,7 @@ export default function App() {
                 { label: 'Pass Rate', value: `${dashboardStats.passRate}%`, icon: TrendingUp, color: 'text-green-600', bg: isDarkMode ? 'bg-green-900/20' : 'bg-green-50' },
                 { label: 'Unanimous', value: `${dashboardStats.unanimity}%`, icon: Activity, color: 'text-purple-600', bg: isDarkMode ? 'bg-purple-900/20' : 'bg-purple-50' }
               ].map((stat, i) => (
-                <div key={i} className={`p-6 rounded-[32px] border shadow-sm flex items-center gap-4 transition-colors ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
+                <div key={i} className={`p-6 rounded-[32px] border shadow-sm flex items-center gap-4 transition-colors ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-100'}`}>
                   <div className={`${stat.bg} ${stat.color} p-4 rounded-2xl`}><stat.icon size={24}/></div>
                   <div>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</p>
@@ -460,7 +460,7 @@ export default function App() {
               ))}
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-              <div className={`p-6 md:p-10 rounded-[44px] border shadow-sm transition-colors ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
+              <div className={`p-6 md:p-10 rounded-[44px] border shadow-sm transition-colors ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-100'}`}>
                 <h3 className={`text-xl font-black mb-8 flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}><Filter size={20} className="text-blue-500" /> Outcome by Category</h3>
                 <div className="h-[300px] md:h-[340px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
@@ -479,7 +479,7 @@ export default function App() {
                   </ResponsiveContainer>
                 </div>
               </div>
-              <div className={`p-6 md:p-10 rounded-[44px] border shadow-sm overflow-hidden flex flex-col transition-colors ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
+              <div className={`p-6 md:p-10 rounded-[44px] border shadow-sm overflow-hidden flex flex-col transition-colors ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-100'}`}>
                 <h3 className={`text-xl font-black mb-8 flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}><Users size={20} className="text-blue-500" /> Bench Participation</h3>
                 <div className="flex-1 overflow-x-auto">
                   <table className="w-full text-left text-sm min-w-[300px]">
@@ -526,7 +526,7 @@ export default function App() {
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {activeComms.map(comm => (
-                  <div key={comm.id} className={`p-8 rounded-[40px] border shadow-sm relative group hover:shadow-2xl transition-all duration-500 overflow-hidden ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
+                  <div key={comm.id} className={`p-8 rounded-[40px] border shadow-sm relative group hover:shadow-2xl transition-all duration-500 overflow-hidden ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-100'}`}>
                     <div className={`absolute top-0 right-0 w-32 h-32 rounded-bl-[100px] -mr-10 -mt-10 transition-all ${isDarkMode ? 'bg-slate-800/50 group-hover:bg-slate-800' : 'bg-blue-50/50 group-hover:bg-blue-100/50'}`}></div>
                     {isAdmin && (
                       <div className="absolute top-6 right-6 flex gap-2 z-10">
@@ -592,7 +592,7 @@ export default function App() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {inactiveComms.map(comm => (
-                    <div key={comm.id} className={`p-6 rounded-[32px] border shadow-sm relative group opacity-75 hover:opacity-100 transition-all overflow-hidden ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
+                    <div key={comm.id} className={`p-6 rounded-[32px] border shadow-sm relative group opacity-75 hover:opacity-100 transition-all overflow-hidden ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-100'}`}>
                       {isAdmin && (
                         <div className="absolute top-4 right-4 flex gap-1 z-10">
                           <button onClick={() => setEditingCommissioner(comm)} className="p-2 text-slate-200 hover:text-blue-500 transition-colors"><Edit2 size={14}/></button>
@@ -628,7 +628,7 @@ export default function App() {
             {meetings.map(meeting => {
               const isExpanded = expandedMeetings.includes(meeting.id);
               return (
-                <div key={meeting.id} className={`rounded-[44px] border transition-all duration-300 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} ${isExpanded ? (isDarkMode ? 'border-blue-900/40 shadow-2xl' : 'border-blue-100 shadow-xl') : 'shadow-sm hover:border-slate-400/20'}`}>
+                <div key={meeting.id} className={`rounded-[44px] border transition-all duration-300 ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-100'} ${isExpanded ? (isDarkMode ? 'border-blue-900/40 shadow-2xl' : 'border-blue-100 shadow-xl') : 'shadow-sm hover:border-slate-400/20'}`}>
                   <div 
                     onClick={() => toggleMeetingCollapse(meeting.id)}
                     className={`p-8 md:p-12 cursor-pointer flex flex-col md:flex-row items-start md:items-center justify-between gap-6 select-none ${isExpanded ? (isDarkMode ? 'bg-slate-800/20 rounded-t-[44px] border-b border-slate-800' : 'bg-slate-50/50 rounded-t-[44px] border-b border-slate-100') : 'rounded-[44px]'}`}
@@ -778,17 +778,81 @@ export default function App() {
         )}
 
         {activeTab === 'about' && (
-          <div className="max-w-4xl space-y-10 animate-in fade-in duration-500 text-white">
-            <div className="p-10 rounded-[44px] shadow-xl relative overflow-hidden group transition-colors bg-slate-900">
+          <div className="max-w-4xl space-y-10 animate-in fade-in duration-500">
+            {/* WIP Section */}
+            <div className={`p-10 rounded-[44px] shadow-xl relative overflow-hidden group transition-colors ${isDarkMode ? 'bg-slate-900 text-white' : 'bg-slate-900 text-white'}`}>
               <div className="absolute top-0 right-0 p-8 text-slate-800 transition-transform group-hover:scale-110"><Construction size={120} /></div>
-              <div className="relative z-10 text-white">
+              <div className="relative z-10">
                 <h3 className="text-2xl font-black mb-6 flex items-center gap-3 text-orange-400"><Construction /> Work in Progress</h3>
                 <div className="space-y-4 text-slate-300 text-lg leading-relaxed font-medium">
                   <p>
                     Please note that CivicWatch is currently <span className="text-white font-bold italic">under active development.</span> This is not an exhaustive archive of all City of Alamogordo commission meetings.
                   </p>
+                  <p>
+                    As a solo project, each meeting entry is manually researched and documented during off-work hours. I am currently working through a backlog of historical meetings to provide a more complete picture of our city's legislative history.
+                  </p>
                 </div>
               </div>
+            </div>
+
+            {/* Disclaimer Section */}
+            <div className={`p-10 rounded-[44px] border shadow-sm relative overflow-hidden transition-colors ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-white border-orange-100'}`}>
+              <div className={`absolute top-0 right-0 p-8 transition-colors ${isDarkMode ? 'text-slate-800' : 'text-orange-50'}`}><ShieldAlert size={120} /></div>
+              <div className="relative z-10">
+                <h3 className="text-2xl font-black mb-6 flex items-center gap-3 text-orange-500"><ShieldAlert /> Content Disclaimer</h3>
+                <div className={`space-y-4 text-lg leading-relaxed font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                  <p>
+                    CivicWatch is a <span className={`font-bold italic underline decoration-orange-300 text-decoration-thickness-2 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>personal passion project</span> created and maintained by Sven Sears. 
+                  </p>
+                  <p>
+                    Although the creator is an employee of the City of Alamogordo, this platform is <span className={`font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>not managed, funded, or endorsed by the City of Alamogordo.</span> 
+                  </p>
+                  <p>
+                    All data and records shown here are compiled from publicly available sources, including official city meeting recordings and published agenda packets. For official, legally binding records, please visit the City Clerk's office.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Methodology & Curation Section */}
+            <div className={`p-10 rounded-[44px] border shadow-sm transition-colors ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-white border-blue-50'}`}>
+              <h3 className={`text-2xl font-black mb-6 flex items-center gap-3 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}><FileText className="text-blue-500" /> Curation & Methodology</h3>
+              <div className={`space-y-4 text-lg leading-relaxed font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                <p>
+                  The goal of this tracker is to highlight high impact decisions regarding city policy, financial contracts, and community infrastructure. 
+                </p>
+                <p>
+                  To keep the Insight Hub focused on substantive data, <span className={`font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>purely procedural items</span> (such as the approval of meeting minutes, invocation, or adjournment) are generally excluded from this tracker. 
+                </p>
+              </div>
+            </div>
+
+            {/* Open Source & Contact Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+               <div className={`p-10 rounded-[44px] border shadow-sm relative overflow-hidden group transition-colors ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-100'}`}>
+                  <div className={`absolute -bottom-6 -right-6 transition-colors ${isDarkMode ? 'text-slate-800' : 'text-slate-50'}`}><Github size={140} /></div>
+                  <div className="relative z-10">
+                    <h3 className={`text-2xl font-black mb-4 flex items-center gap-3 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}><Code className="text-blue-500" /> Open Source</h3>
+                    <p className={`mb-8 font-medium ${isDarkMode ? 'text-slate-500' : 'text-slate-500'}`}>
+                      CivicWatch is built in support of a free internet. The code is available for any resident in any city to use for their own community.
+                    </p>
+                    <a href="https://github.com/Anarchyhehe/coa-tracker" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-black transition-all shadow-lg shadow-blue-900/40">
+                      <Github size={20} /> Report via GitHub
+                    </a>
+                  </div>
+               </div>
+
+               <div className={`p-10 rounded-[44px] border shadow-sm flex flex-col justify-between transition-colors ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-100'}`}>
+                  <div>
+                    <h3 className={`text-2xl font-black mb-4 flex items-center gap-3 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}><MessagesSquare className="text-orange-500" /> Get in Touch</h3>
+                    <p className={`font-medium mb-6 ${isDarkMode ? 'text-slate-500' : 'text-slate-500'}`}>
+                      For questions regarding data accuracy, suggestions for new categories, or collaboration requests.
+                    </p>
+                  </div>
+                  <a href="mailto:alamogordocivicwatch@gmail.com" className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-3xl font-black transition-all ${isDarkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-900 hover:bg-slate-200'}`}>
+                    <Mail size={20} /> alamogordocivicwatch@gmail.com
+                  </a>
+               </div>
             </div>
           </div>
         )}
@@ -797,7 +861,7 @@ export default function App() {
 
         {(isAddingMeeting || editingMeeting) && (
           <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[100] flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
-            <div className={`rounded-[32px] md:rounded-[56px] w-full max-w-2xl p-6 md:p-12 shadow-2xl max-h-[90vh] overflow-y-auto transition-colors ${isDarkMode ? 'bg-slate-900' : 'bg-white'}`}>
+            <div className={`rounded-[32px] md:rounded-[56px] w-full max-w-2xl p-6 md:p-12 shadow-2xl max-h-[90vh] overflow-y-auto transition-colors ${isDarkMode ? 'bg-slate-950' : 'bg-white'}`}>
               <div className="flex justify-between items-center mb-10"><h3 className={`text-2xl md:text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{editingMeeting ? "Configure Session Bench" : "New Meeting Date"}</h3><button onClick={() => {setIsAddingMeeting(false); setEditingMeeting(null);}} className="text-slate-300 hover:text-slate-600 transition-colors"><X size={32}/></button></div>
               <form onSubmit={handleMeetingSubmit} className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -813,7 +877,7 @@ export default function App() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {commissioners.sort((a,b) => (b.isActive?1:0) - (a.isActive?1:0)).map(comm => {
                       const isActive = editingMeeting?.activeCommissionerIds?.includes(comm.id) ?? comm.isActive;
-                      return (<label key={comm.id} className={`flex items-center gap-3 p-4 rounded-2xl border cursor-pointer hover:border-blue-500 transition-all ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}><input type="checkbox" name={`active-${comm.id}`} defaultChecked={isActive} className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500" /><div className="flex items-center gap-2"><img src={comm.image} className={`w-8 h-8 rounded-full object-cover ${!comm.isActive && 'grayscale'}`} alt="" /><div><p className={`text-xs font-bold ${!comm.isActive ? 'text-slate-400 italic' : (isDarkMode ? 'text-slate-200' : 'text-slate-900')}`}>{comm.name}</p></div></div></label>);
+                      return (<label key={comm.id} className={`flex items-center gap-3 p-4 rounded-2xl border cursor-pointer hover:border-blue-500 transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-100'}`}><input type="checkbox" name={`active-${comm.id}`} defaultChecked={isActive} className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500" /><div className="flex items-center gap-2"><img src={comm.image} className={`w-8 h-8 rounded-full object-cover ${!comm.isActive && 'grayscale'}`} alt="" /><div><p className={`text-xs font-bold ${!comm.isActive ? 'text-slate-400 italic' : (isDarkMode ? 'text-slate-200' : 'text-slate-900')}`}>{comm.name}</p></div></div></label>);
                     })}
                   </div>
                 </div>
@@ -825,7 +889,7 @@ export default function App() {
 
         {(isAddingItemToMeeting || editingItem) && (
           <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[110] flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
-            <div className={`rounded-[32px] md:rounded-[56px] w-full max-w-2xl p-6 md:p-12 shadow-2xl max-h-[90vh] overflow-y-auto transition-colors ${isDarkMode ? 'bg-slate-900' : 'bg-white'}`}>
+            <div className={`rounded-[32px] md:rounded-[56px] w-full max-w-2xl p-6 md:p-12 shadow-2xl max-h-[90vh] overflow-y-auto transition-colors ${isDarkMode ? 'bg-slate-950' : 'bg-white'}`}>
               <div className="flex justify-between items-center mb-10"><h3 className={`text-2xl md:text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{editingItem ? "Edit Agenda Item" : "Add Agenda Item"}</h3><button onClick={() => {setIsAddingItemToMeeting(null); setEditingItem(null);}} className="text-slate-300 hover:text-slate-600 transition-colors"><X size={32}/></button></div>
               <form onSubmit={handleItemSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -843,7 +907,7 @@ export default function App() {
 
         {(isAddingCommissioner || editingCommissioner) && (
           <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[100] flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
-            <div className={`rounded-[32px] md:rounded-[56px] w-full max-w-2xl p-6 md:p-12 shadow-2xl max-h-[90vh] overflow-y-auto transition-colors ${isDarkMode ? 'bg-slate-900' : 'bg-white'}`}>
+            <div className={`rounded-[32px] md:rounded-[56px] w-full max-w-2xl p-6 md:p-12 shadow-2xl max-h-[90vh] overflow-y-auto transition-colors ${isDarkMode ? 'bg-slate-950' : 'bg-white'}`}>
               <div className="flex justify-between items-center mb-10"><h3 className={`text-2xl md:text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{editingCommissioner ? "Update Profile" : "New Member"}</h3><button onClick={() => {setIsAddingCommissioner(false); setEditingCommissioner(null);}} className="text-slate-300 hover:text-slate-600 transition-colors"><X size={32}/></button></div>
               <form onSubmit={handleCommissionerSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -875,7 +939,7 @@ export default function App() {
 
         {isLoginModalOpen && (
           <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
-            <div className={`rounded-[40px] w-full max-w-md p-10 shadow-2xl relative transition-colors ${isDarkMode ? 'bg-slate-900' : 'bg-white'}`}><div className="flex justify-between items-center mb-10"><h3 className={`text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Admin Portal</h3><button onClick={() => setIsLoginModalOpen(false)} className="text-slate-300 hover:text-slate-600 transition-colors"><X size={32}/></button></div>{loginError && (<div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600 text-sm font-bold"><AlertCircle size={20} /> {loginError}</div>)}<form onSubmit={handleLogin} className="space-y-6"><input name="email" type="email" required placeholder="Email" className={`w-full p-4 border-2 rounded-2xl outline-none font-bold transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /><input name="password" type="password" required placeholder="Password" className={`w-full p-4 border-2 rounded-2xl outline-none font-bold transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /><button type="submit" disabled={isLoggingIn} className="w-full bg-slate-900 text-white py-5 rounded-[24px] font-black text-lg disabled:opacity-50 transition-transform active:scale-95">{isLoggingIn ? "Signing In..." : "Log In"}</button></form></div>
+            <div className={`rounded-[40px] w-full max-md p-10 shadow-2xl relative transition-colors ${isDarkMode ? 'bg-slate-950' : 'bg-white'}`}><div className="flex justify-between items-center mb-10"><h3 className={`text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Admin Portal</h3><button onClick={() => setIsLoginModalOpen(false)} className="text-slate-300 hover:text-slate-600 transition-colors"><X size={32}/></button></div>{loginError && (<div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600 text-sm font-bold"><AlertCircle size={20} /> {loginError}</div>)}<form onSubmit={handleLogin} className="space-y-6"><input name="email" type="email" required placeholder="Email" className={`w-full p-4 border-2 rounded-2xl outline-none font-bold transition-all ${isDarkMode ? 'bg-slate-900 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /><input name="password" type="password" required placeholder="Password" className={`w-full p-4 border-2 rounded-2xl outline-none font-bold transition-all ${isDarkMode ? 'bg-slate-900 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /><button type="submit" disabled={isLoggingIn} className="w-full bg-slate-900 text-white py-5 rounded-[24px] font-black text-lg disabled:opacity-50 transition-transform active:scale-95">{isLoggingIn ? "Signing In..." : "Log In"}</button></form></div>
           </div>
         )}
       </main>
