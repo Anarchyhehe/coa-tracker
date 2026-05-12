@@ -74,7 +74,8 @@ import {
   Ban,
   UserMinus,
   Phone,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Shield
 } from 'lucide-react';
 
 // --- FIREBASE CONFIGURATION ---
@@ -249,6 +250,7 @@ export default function App() {
       description: formData.get('description'),
       status: formData.get('status'),
       timestampUrl: formData.get('timestampUrl'),
+      isClosedSession: formData.get('isClosedSession') === 'on',
       votes: editingItem ? editingItem.itemData.votes : Object.fromEntries(rosterIds.map(id => [id, "Yes"]))
     };
 
@@ -348,11 +350,14 @@ export default function App() {
       };
     });
 
+    const closedSessionsCount = allItems.filter(i => i.isClosedSession).length;
+
     return {
       totalMeetings: meetings.length,
       totalItems: allItems.length,
       passRate: votingItems.length > 0 ? Math.round((votingItems.filter(i => i.status === "Passed").length / votingItems.length) * 100) : 0,
       unanimity: votingItems.length > 0 ? Math.round((unanimousCount / votingItems.length) * 100) : 0,
+      closedSessions: closedSessionsCount,
       categoryChart: Object.values(catMap),
       commPerformance
     };
@@ -443,12 +448,13 @@ export default function App() {
 
         {activeTab === 'dashboard' && (
           <div className="space-y-10 animate-in fade-in duration-700">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
               {[
                 { label: 'Meetings', value: dashboardStats.totalMeetings, icon: Calendar, color: 'text-blue-600', bg: isDarkMode ? 'bg-blue-900/20' : 'bg-blue-50' },
                 { label: 'Agenda Items', value: dashboardStats.totalItems, icon: FileText, color: 'text-orange-600', bg: isDarkMode ? 'bg-orange-900/20' : 'bg-orange-50' },
                 { label: 'Pass Rate', value: `${dashboardStats.passRate}%`, icon: TrendingUp, color: 'text-green-600', bg: isDarkMode ? 'bg-green-900/20' : 'bg-green-50' },
-                { label: 'Unanimous', value: `${dashboardStats.unanimity}%`, icon: Activity, color: 'text-purple-600', bg: isDarkMode ? 'bg-purple-900/20' : 'bg-purple-50' }
+                { label: 'Unanimous', value: `${dashboardStats.unanimity}%`, icon: Activity, color: 'text-purple-600', bg: isDarkMode ? 'bg-purple-900/20' : 'bg-purple-50' },
+                { label: 'Executive', value: dashboardStats.closedSessions, icon: Shield, color: 'text-red-600', bg: isDarkMode ? 'bg-red-900/20' : 'bg-red-50' }
               ].map((stat, i) => (
                 <div key={i} className={`p-6 rounded-[32px] border shadow-sm flex items-center gap-4 transition-colors ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-100'}`}>
                   <div className={`${stat.bg} ${stat.color} p-4 rounded-2xl`}><stat.icon size={24}/></div>
@@ -702,6 +708,11 @@ export default function App() {
                                         <Youtube size={14} /> Watch Segment
                                       </a>
                                     )}
+                                    {item.isClosedSession && (
+                                      <span className={`flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full ${isDarkMode ? 'bg-red-900/30 text-red-400' : 'bg-red-100 text-red-700'}`}>
+                                        <Shield size={14} /> Closed Session
+                                      </span>
+                                    )}
                                   </div>
                                   <h4 className={`text-2xl md:text-3xl font-black mb-5 leading-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{item.title}</h4>
                                   <p className={`text-base md:text-lg leading-relaxed font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{item.description}</p>
@@ -899,6 +910,12 @@ export default function App() {
                 <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Agenda Title</label><input name="title" placeholder="Official Title" required defaultValue={editingItem?.itemData.title} className={`w-full p-4 border-2 rounded-2xl font-bold text-lg outline-none transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
                 <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">YouTube Segment URL (Optional)</label><input name="timestampUrl" placeholder="https://..." defaultValue={editingItem?.itemData.timestampUrl} className={`w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
                 <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Public Summary</label><textarea name="description" placeholder="Description..." rows="4" defaultValue={editingItem?.itemData.description} className={`w-full p-4 border-2 rounded-3xl text-lg outline-none transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`}></textarea></div>
+                
+                <div className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-colors ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
+                   <input type="checkbox" name="isClosedSession" id="isClosedSession" defaultChecked={editingItem?.itemData?.isClosedSession} className="w-6 h-6 rounded border-slate-300 text-red-600" />
+                   <label htmlFor="isClosedSession" className={`text-sm font-black uppercase tracking-widest ${isDarkMode ? 'text-slate-400' : 'text-slate-700'}`}>Executive Closed Session</label>
+                </div>
+
                 <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-[24px] font-black text-xl shadow-2xl transition-transform active:scale-95">Save Item</button>
               </form>
             </div>
