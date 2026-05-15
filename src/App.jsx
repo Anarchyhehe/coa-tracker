@@ -222,6 +222,7 @@ export default function App() {
       title: formData.get('title'),
       youtubeUrl: formData.get('youtubeUrl'),
       agendaUrl: formData.get('agendaUrl'),
+      hasExecutiveSession: formData.get('hasExecutiveSession') === 'on',
       activeCommissionerIds: activeIds
     };
 
@@ -250,7 +251,6 @@ export default function App() {
       description: formData.get('description'),
       status: formData.get('status'),
       timestampUrl: formData.get('timestampUrl'),
-      isClosedSession: formData.get('isClosedSession') === 'on',
       votes: editingItem ? editingItem.itemData.votes : Object.fromEntries(rosterIds.map(id => [id, "Yes"]))
     };
 
@@ -350,7 +350,7 @@ export default function App() {
       };
     });
 
-    const closedSessionsCount = allItems.filter(i => i.isClosedSession).length;
+    const closedSessionsCount = meetings.filter(m => m.hasExecutiveSession).length;
 
     return {
       totalMeetings: meetings.length,
@@ -657,6 +657,11 @@ export default function App() {
                                 <LinkIcon size={28} />
                               </a>
                             )}
+                            {meeting.hasExecutiveSession && (
+                              <span className="text-red-600" title="Meeting Included Executive Session">
+                                <Shield size={28} />
+                              </span>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center gap-4 mt-3">
@@ -707,11 +712,6 @@ export default function App() {
                                       <a href={item.timestampUrl} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full transition-transform hover:scale-105 ${isDarkMode ? 'bg-red-900/30 text-red-400' : 'bg-red-100 text-red-700'}`}>
                                         <Youtube size={14} /> Watch Segment
                                       </a>
-                                    )}
-                                    {item.isClosedSession && (
-                                      <span className={`flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full ${isDarkMode ? 'bg-red-900/30 text-red-400' : 'bg-red-100 text-red-700'}`}>
-                                        <Shield size={14} /> Closed Session
-                                      </span>
                                     )}
                                   </div>
                                   <h4 className={`text-2xl md:text-3xl font-black mb-5 leading-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{item.title}</h4>
@@ -883,6 +883,12 @@ export default function App() {
                   <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">YouTube Recording URL</label><input name="youtubeUrl" placeholder="https://..." defaultValue={editingMeeting?.youtubeUrl} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
                   <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Official Agenda Link</label><input name="agendaUrl" placeholder="Link to PDF..." defaultValue={editingMeeting?.agendaUrl} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
                 </div>
+
+                <div className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-colors ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
+                   <input type="checkbox" name="hasExecutiveSession" id="hasExecutiveSession" defaultChecked={editingMeeting?.hasExecutiveSession} className="w-6 h-6 rounded border-slate-300 text-red-600" />
+                   <label htmlFor="hasExecutiveSession" className={`text-sm font-black uppercase tracking-widest ${isDarkMode ? 'text-slate-400' : 'text-slate-700'}`}>Executive Session for this Meeting</label>
+                </div>
+
                 <div className={`p-6 md:p-8 rounded-[32px] border transition-colors ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Bench Selection (Who was seated?)</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -910,12 +916,6 @@ export default function App() {
                 <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Agenda Title</label><input name="title" placeholder="Official Title" required defaultValue={editingItem?.itemData.title} className={`w-full p-4 border-2 rounded-2xl font-bold text-lg outline-none transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
                 <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">YouTube Segment URL (Optional)</label><input name="timestampUrl" placeholder="https://..." defaultValue={editingItem?.itemData.timestampUrl} className={`w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
                 <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Public Summary</label><textarea name="description" placeholder="Description..." rows="4" defaultValue={editingItem?.itemData.description} className={`w-full p-4 border-2 rounded-3xl text-lg outline-none transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`}></textarea></div>
-                
-                <div className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-colors ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
-                   <input type="checkbox" name="isClosedSession" id="isClosedSession" defaultChecked={editingItem?.itemData?.isClosedSession} className="w-6 h-6 rounded border-slate-300 text-red-600" />
-                   <label htmlFor="isClosedSession" className={`text-sm font-black uppercase tracking-widest ${isDarkMode ? 'text-slate-400' : 'text-slate-700'}`}>Executive Closed Session</label>
-                </div>
-
                 <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-[24px] font-black text-xl shadow-2xl transition-transform active:scale-95">Save Item</button>
               </form>
             </div>
