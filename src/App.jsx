@@ -153,6 +153,7 @@ const defaultCharterArticles = [
     id: 'article-1',
     num: 'I',
     title: 'Powers of the City',
+    order: 0,
     summary: 'Establishes the City of Alamogordo as a municipal corporation under New Mexico law and grants it all powers of local self-government, including the ability to adopt ordinances, levy taxes, and manage municipal services.',
     sections: [
       { title: 'Section 1.01 - Body Politic', text: 'The inhabitants of the City of Alamogordo, New Mexico, within the boundaries now established or as hereafter established, shall continue to be a body politic and corporate under the name of the City of Alamogordo.' },
@@ -164,6 +165,7 @@ const defaultCharterArticles = [
     id: 'article-2',
     num: 'II',
     title: 'Elections, Initiatives & Recalls',
+    order: 1,
     summary: 'Governs local elections, voter eligibility, initiative and referendum petitions, and the formal recall process for elected officials.',
     sections: [
       { title: 'Section 2.01 - Elective Offices', text: 'The elective offices of the city shall be a Mayor, elected at-large, and six Commissioners, elected from districts. Elections shall be non-partisan and conducted under the New Mexico Local Election Act.' },
@@ -175,6 +177,7 @@ const defaultCharterArticles = [
     id: 'article-3',
     num: 'III',
     title: 'The City Commission',
+    order: 2,
     summary: 'Defines the governing body of the city, including qualifications for candidacy, terms of office, composition, compensation rules, and meeting procedures.',
     sections: [
       { title: 'Section 3.01 - Composition and Terms', text: 'The City Commission consists of the Mayor and six Commissioners. They are elected for staggered four-year terms, with three commissioners elected every two years.' },
@@ -187,6 +190,7 @@ const defaultCharterArticles = [
     id: 'article-4',
     num: 'IV',
     title: 'Administrative Service',
+    order: 3,
     summary: 'Details the appointment, duties, and removal of the City Manager, who serves as the chief administrative officer. It also governs the City Clerk, City Treasurer, and City Attorney.',
     sections: [
       { title: 'Section 4.01 - Appointment of City Manager', text: 'The Commission appoints a City Manager for an indefinite term. The selection is based solely on professional and administrative qualifications. The Manager serves at the pleasure of the Commission.' },
@@ -198,6 +202,7 @@ const defaultCharterArticles = [
     id: 'article-5',
     num: 'V',
     title: 'Personnel System',
+    order: 4,
     summary: 'Establishes a merit-based system for city employees, prohibiting political hiring and assuring fair employment practices.',
     sections: [
       { title: 'Section 5.01 - Merit System', text: 'All appointments and promotions of City officers and employees shall be made solely on the basis of merit and fitness, demonstrated by examination or other evidence of competence.' },
@@ -208,6 +213,7 @@ const defaultCharterArticles = [
     id: 'article-6',
     num: 'VI',
     title: 'Finance & Budget',
+    order: 5,
     summary: 'Governs how municipal funds are raised, budgeted, and audited annually to ensure financial integrity.',
     sections: [
       { title: 'Section 6.01 - Fiscal Year', text: 'The fiscal year of the City shall begin on the first day of July and end on the last day of June of the succeeding year.' },
@@ -219,6 +225,7 @@ const defaultCharterArticles = [
     id: 'article-7',
     num: 'VII',
     title: 'Taxation & Revenue',
+    order: 6,
     summary: 'Authorizes and restricts the city\'s power to levy property, gross receipts, and franchise taxes under New Mexico state limits.',
     sections: [
       { title: 'Section 7.01 - Taxing Authority', text: 'The City shall have the power to levy taxes, assess fees, and collect revenues for municipal purposes as authorized by the Constitution and laws of New Mexico.' }
@@ -228,6 +235,7 @@ const defaultCharterArticles = [
     id: 'article-8',
     num: 'VIII',
     title: 'Franchises & Utilities',
+    order: 7,
     summary: 'Rules for granting franchises to private utility companies and managing municipal utilities like water and wastewater systems.',
     sections: [
       { title: 'Section 8.01 - Utility Franchises', text: 'No franchise or easement to use the public streets or properties of the City shall be granted without approval by ordinance, restricting terms to a maximum of twenty-five years.' }
@@ -237,6 +245,7 @@ const defaultCharterArticles = [
     id: 'article-9',
     num: 'IX',
     title: 'Planning & Zoning',
+    order: 8,
     summary: 'Outlines the powers of the Planning and Zoning Commission and the adoption of the City master development plan.',
     sections: [
       { title: 'Section 9.01 - Planning Commission', text: 'The Commission shall establish a Planning and Zoning Commission to advise on the physical development of the City and review land use requests.' }
@@ -246,6 +255,7 @@ const defaultCharterArticles = [
     id: 'article-10',
     num: 'X',
     title: 'Ordinances',
+    order: 9,
     summary: 'The formal legislative procedure required for the City Commission to pass local laws and emergency declarations.',
     sections: [
       { title: 'Section 10.01 - Action by Ordinance', text: 'Legislative acts of the Commission shall be by ordinance. Every proposed ordinance shall be introduced in writing and read by title at a public meeting before final vote.' }
@@ -255,6 +265,7 @@ const defaultCharterArticles = [
     id: 'article-11',
     num: 'XI',
     title: 'Transparency',
+    order: 10,
     summary: 'Guarantees open meetings, public access to government records, and ethical standards for city officials.',
     sections: [
       { title: 'Section 11.01 - Open Meetings', text: 'All meetings of the Commission and advisory boards shall be open to the public, except as authorized by the New Mexico Open Meetings Act.' }
@@ -264,6 +275,7 @@ const defaultCharterArticles = [
     id: 'article-12',
     num: 'XII',
     title: 'Schedule & Transition',
+    order: 11,
     summary: 'Contains the legal mechanics for transitioning local laws and saving existing contracts when the charter is amended.',
     sections: [
       { title: 'Section 12.01 - Continuity', text: 'All ordinances, resolutions, and regulations of the City in force at the time this Charter takes effect shall continue in full force until amended or repealed.' }
@@ -311,11 +323,24 @@ export default function App() {
   const [loginError, setLoginError] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
+  // Custom confirmation modal state
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: null
+  });
+
   const isAdmin = user && !user.isAnonymous;
 
   // Compute active variables with Firestore values or hardcoded defaults as a fallback
   const displayArticles = useMemo(() => {
-    return charterArticles.length > 0 ? charterArticles : defaultCharterArticles;
+    const list = charterArticles.length > 0 ? charterArticles : defaultCharterArticles;
+    return [...list].sort((a, b) => {
+      const orderA = a.order !== undefined ? a.order : 0;
+      const orderB = b.order !== undefined ? b.order : 0;
+      return orderA - orderB;
+    });
   }, [charterArticles]);
 
   const displayQuickLinks = useMemo(() => {
@@ -393,6 +418,19 @@ export default function App() {
       setHasInitializedExpansion(true);
     }
   }, [meetings, hasInitializedExpansion]);
+
+  // Unified custom confirmation helper
+  const triggerConfirm = (title, message, onConfirm) => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -484,6 +522,7 @@ export default function App() {
 
   const handleCharterArticleSubmit = async (e) => {
     e.preventDefault();
+    setCharterMessage("Saving article config...");
     const formData = new FormData(e.target);
     const data = {
       num: formData.get('num'),
@@ -492,15 +531,24 @@ export default function App() {
       sections: modalSections
     };
 
-    if (editingCharterArticle) {
-      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'charterArticles', editingCharterArticle.id), data);
-      setEditingCharterArticle(null);
-      setCharterMessage(`Updated Article ${data.num}`);
-    } else {
-      const newId = 'article-' + crypto.randomUUID().substring(0, 8);
-      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'charterArticles', newId), data);
-      setIsAddingCharterArticle(false);
-      setCharterMessage(`Added Article ${data.num}`);
+    try {
+      if (editingCharterArticle) {
+        if (editingCharterArticle.order !== undefined) {
+          data.order = editingCharterArticle.order;
+        }
+        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'charterArticles', editingCharterArticle.id), data);
+        setEditingCharterArticle(null);
+        setCharterMessage(`Updated Article ${data.num}`);
+      } else {
+        data.order = displayArticles.length;
+        const newId = 'article-' + crypto.randomUUID().substring(0, 8);
+        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'charterArticles', newId), data);
+        setIsAddingCharterArticle(false);
+        setCharterMessage(`Added Article ${data.num}`);
+      }
+    } catch (err) {
+      console.error("Save article failure:", err);
+      setCharterMessage(`Save failed: ${err.message}`);
     }
   };
 
@@ -517,14 +565,19 @@ export default function App() {
       colorTheme: theme
     };
 
-    if (editingQuickLink) {
-      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'charterQuickLinks', editingQuickLink.id), data);
-      setEditingQuickLink(null);
-      setCharterMessage(`Updated Link "${data.title}"`);
-    } else {
-      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'charterQuickLinks'), data);
-      setIsAddingQuickLink(false);
-      setCharterMessage(`Created Link "${data.title}"`);
+    try {
+      if (editingQuickLink) {
+        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'charterQuickLinks', editingQuickLink.id), data);
+        setEditingQuickLink(null);
+        setCharterMessage(`Updated Link "${data.title}"`);
+      } else {
+        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'charterQuickLinks'), data);
+        setIsAddingQuickLink(false);
+        setCharterMessage(`Created Link "${data.title}"`);
+      }
+    } catch (err) {
+      console.error("Quicklink save failed:", err);
+      setCharterMessage(`Save failed: ${err.message}`);
     }
   };
 
@@ -532,13 +585,15 @@ export default function App() {
     if (!isAdmin) return;
     setCharterMessage("Initializing database with default Alamogordo Charter...");
     try {
-      for (const art of defaultCharterArticles) {
+      for (let i = 0; i < defaultCharterArticles.length; i++) {
+        const art = defaultCharterArticles[i];
         const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'charterArticles', art.id);
         await setDoc(docRef, {
           num: art.num,
           title: art.title,
           summary: art.summary,
-          sections: art.sections
+          sections: art.sections,
+          order: i
         });
       }
       for (const ql of defaultQuickLinks) {
@@ -555,6 +610,55 @@ export default function App() {
     } catch (err) {
       console.error("Initialization failed:", err);
       setCharterMessage(`Error during setup: ${err.message}`);
+    }
+  };
+
+  const moveArticle = async (artId, direction) => {
+    if (!isAdmin) return;
+    
+    const index = displayArticles.findIndex(a => a.id === artId);
+    if (index === -1) return;
+    
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= displayArticles.length) return;
+    
+    const currentArt = displayArticles[index];
+    const siblingArt = displayArticles[newIndex];
+    
+    const currentOrder = currentArt.order !== undefined ? currentArt.order : index;
+    const siblingOrder = siblingArt.order !== undefined ? siblingArt.order : newIndex;
+    
+    setCharterMessage("Saving new order index...");
+    
+    try {
+      const isLocalFallback = charterArticles.length === 0;
+      if (isLocalFallback) {
+        setCharterMessage("Initializing default database records to support reordering...");
+        for (let i = 0; i < defaultCharterArticles.length; i++) {
+          const art = defaultCharterArticles[i];
+          const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'charterArticles', art.id);
+          await setDoc(docRef, {
+            num: art.num,
+            title: art.title,
+            summary: art.summary,
+            sections: art.sections,
+            order: i
+          });
+        }
+        setCharterMessage("Database initialized. Please try moving your article again!");
+        return;
+      }
+      
+      const currentRef = doc(db, 'artifacts', appId, 'public', 'data', 'charterArticles', currentArt.id);
+      const siblingRef = doc(db, 'artifacts', appId, 'public', 'data', 'charterArticles', siblingArt.id);
+      
+      await updateDoc(currentRef, { order: siblingOrder });
+      await updateDoc(siblingRef, { order: currentOrder });
+      
+      setCharterMessage("Order index updated!");
+    } catch (err) {
+      console.error("Failed to reorder:", err);
+      setCharterMessage(`Reorder failed: ${err.message}`);
     }
   };
 
@@ -773,7 +877,7 @@ export default function App() {
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDarkMode ? "#334155" : "#f1f5f9"} />
                       <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 700, fill: '#64748b'}} />
                       <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 700, fill: '#64748b'}} />
-                      <Tooltip contentStyle={{ borderRadius: '20px', backgroundColor: isDarkMode ? '#1e293b' : '#ffffff', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }} />
+                      <Tooltip contentStyle={{ borderRadius: '20px', backgroundColor: isDarkMode ? '#1e293b' : '#ffffff', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.15)' }} />
                       <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
                       <Bar dataKey="Passed" fill="#22c55e" radius={[4, 4, 0, 0]} />
                       <Bar dataKey="Failed" fill="#ef4444" radius={[4, 4, 0, 0]} />
@@ -836,7 +940,7 @@ export default function App() {
                     {isAdmin && (
                       <div className="absolute top-6 right-6 flex gap-2 z-10">
                         <button onClick={() => setEditingCommissioner(comm)} className="p-2 text-slate-300 hover:text-blue-500 transition-colors"><Edit2 size={18}/></button>
-                        <button onClick={() => { if(window.confirm("Remove member?")) deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'commissioners', comm.id))}} className="p-2 text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={18}/></button>
+                        <button onClick={() => { triggerConfirm("Remove Member", "Are you sure you want to remove this member?", () => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'commissioners', comm.id))) }} className="p-2 text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={18}/></button>
                       </div>
                     )}
                     <div className="flex flex-col sm:flex-row items-center sm:items-start gap-8 relative z-0">
@@ -976,7 +1080,7 @@ export default function App() {
                         <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                            <button onClick={() => setIsAddingItemToMeeting(meeting.id)} className="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-transform hover:scale-105"><Plus size={16}/> Add Item</button>
                            <button onClick={() => setEditingMeeting(meeting)} className="p-2 text-slate-400 hover:text-blue-600"><Edit2 size={20}/></button>
-                           <button onClick={() => { if(window.confirm("Delete meeting?")) deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meeting.id))}} className="p-2 text-slate-400 hover:text-red-600"><Trash2 size={20}/></button>
+                           <button onClick={() => { triggerConfirm("Delete Meeting", "Are you sure you want to delete this meeting?", () => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meeting.id))) }} className="p-2 text-slate-400 hover:text-red-600"><Trash2 size={20}/></button>
                         </div>
                       )}
                       <div className="p-2 text-slate-300">
@@ -1000,7 +1104,7 @@ export default function App() {
                               {isAdmin && (
                                 <div className="absolute top-6 md:top-10 right-6 md:right-10 flex gap-2">
                                    <button onClick={() => setEditingItem({ meetingId: meeting.id, itemIndex: idx, itemData: item })} className="p-2 text-slate-300 hover:text-blue-500"><Edit2 size={16}/></button>
-                                   <button onClick={() => { if(window.confirm("Delete item?")) { const updated = meeting.items.filter((_, i) => i !== idx); updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meeting.id), { items: updated }); }}} className="p-2 text-slate-300 hover:text-red-500"><Trash2 size={16}/></button>
+                                   <button onClick={() => { triggerConfirm("Delete Item", "Are you sure you want to delete this item?", () => { const updated = meeting.items.filter((_, i) => i !== idx); updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meeting.id), { items: updated }); }) }} className="p-2 text-slate-300 hover:text-red-500"><Trash2 size={16}/></button>
                                 </div>
                               )}
                               <div className="flex flex-col lg:flex-row justify-between items-start mb-12 gap-10">
@@ -1132,11 +1236,11 @@ export default function App() {
                           <Edit2 size={12} />
                         </button>
                         <button 
-                          onClick={async () => {
-                            if (window.confirm(`Delete jump link "${topic.title}"?`)) {
+                          onClick={() => {
+                            triggerConfirm("Delete Link", `Delete jump link "${topic.title}"?`, async () => {
                               await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'charterQuickLinks', topic.id));
                               setCharterMessage(`Deleted "${topic.title}" jump link`);
-                            }
+                            });
                           }}
                           className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"
                         >
@@ -1188,7 +1292,7 @@ export default function App() {
                 </div>
                 
                 <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-                  {displayArticles.map((art) => {
+                  {displayArticles.map((art, idx) => {
                     const isActive = activeCharterArticle === art.id;
                     return (
                       <div
@@ -1208,7 +1312,25 @@ export default function App() {
                         </div>
 
                         {isAdmin && (
-                          <div className="flex gap-1 opacity-0 group-hover/artrow:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center gap-1 opacity-0 group-hover/artrow:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                            {/* Reordering Controls */}
+                            <button 
+                              onClick={() => moveArticle(art.id, 'up')}
+                              disabled={idx === 0}
+                              className={`p-1 hover:text-blue-300 ${isActive ? 'text-white' : 'text-slate-400'} ${idx === 0 ? 'opacity-30 cursor-not-allowed' : ''}`}
+                              title="Move Article Up"
+                            >
+                              <ChevronUp size={16} />
+                            </button>
+                            <button 
+                              onClick={() => moveArticle(art.id, 'down')}
+                              disabled={idx === displayArticles.length - 1}
+                              className={`p-1 hover:text-blue-300 ${isActive ? 'text-white' : 'text-slate-400'} ${idx === displayArticles.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}`}
+                              title="Move Article Down"
+                            >
+                              <ChevronDown size={16} />
+                            </button>
+                            
                             <button 
                               onClick={() => {
                                 setEditingCharterArticle(art);
@@ -1219,11 +1341,11 @@ export default function App() {
                               <Edit2 size={12} />
                             </button>
                             <button 
-                              onClick={async () => {
-                                if (window.confirm(`Delete Article ${art.num}?`)) {
+                              onClick={() => {
+                                triggerConfirm("Delete Article", `Are you sure you want to delete Article ${art.num}?`, async () => {
                                   await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'charterArticles', art.id));
                                   setCharterMessage(`Deleted Article ${art.num}`);
-                                }
+                                });
                               }}
                               className={`p-1 hover:text-red-400 ${isActive ? 'text-white' : 'text-slate-400'}`}
                             >
@@ -1347,7 +1469,7 @@ export default function App() {
                   The goal of this tracker is to focus on high impact decisions regarding city policy, financial contracts, and community infrastructure. 
                 </p>
                 <p>
-                  To keep the Insight Hub focused on substantive data, <span className={`font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>purely procedural items</span> (such as the approval of meeting minutes, invocation, or adjournment) are generally excluded from this tracker. 
+                  To keep the Insight Hub focused on substantive data, <span className={`font-bold ${isDarkMode ? 'text-white' : 'text-slate-950'}`}>purely procedural items</span> (such as the approval of meeting minutes, invocation, or adjournment) are generally excluded from this tracker. 
                 </p>
               </div>
             </div>
@@ -1383,6 +1505,33 @@ export default function App() {
         )}
 
         {/* --- MODALS --- */}
+
+        {/* Modal: Custom Confirmation Dialog */}
+        {confirmModal.isOpen && (
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[300] flex items-center justify-center p-6 animate-in fade-in duration-300">
+            <div className={`rounded-[32px] w-full max-w-md p-8 shadow-2xl border transition-colors ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-100'}`}>
+              <div className="flex items-center gap-3 text-red-500 mb-4">
+                <AlertCircle size={28} />
+                <h3 className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{confirmModal.title}</h3>
+              </div>
+              <p className={`text-sm font-semibold mb-8 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{confirmModal.message}</p>
+              <div className="flex gap-4 justify-end">
+                <button 
+                  onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                  className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest ${isDarkMode ? 'bg-slate-900 hover:bg-slate-800 text-slate-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={confirmModal.onConfirm}
+                  className="px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/20"
+                >
+                  Confirm
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Modal: Add/Edit Charter Article */}
         {(isAddingCharterArticle || editingCharterArticle) && (
