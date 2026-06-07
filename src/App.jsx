@@ -7,7 +7,8 @@ import {
   onSnapshot, 
   addDoc, 
   updateDoc,
-  deleteDoc
+  deleteDoc,
+  setDoc
 } from 'firebase/firestore';
 import { 
   getAuth, 
@@ -51,7 +52,6 @@ import {
   TrendingUp,
   Activity,
   FileText,
-  Award,
   CalendarDays,
   Youtube,
   ExternalLink,
@@ -75,7 +75,11 @@ import {
   UserMinus,
   Phone,
   Link as LinkIcon,
-  Shield
+  Shield,
+  Scroll,
+  Scale,
+  BookOpen,
+  HelpCircle
 } from 'lucide-react';
 
 // --- FIREBASE CONFIGURATION ---
@@ -104,6 +108,175 @@ const formatDate = (dateStr) => {
   return `${month}/${day}/${year}`;
 };
 
+// Lucide Icon Mapper Helper
+const iconMap = {
+  Users: Users,
+  ShieldAlert: ShieldAlert,
+  Scale: Scale,
+  FileText: FileText,
+  BookOpen: BookOpen,
+  HelpCircle: HelpCircle,
+  Scroll: Scroll,
+  Shield: Shield
+};
+
+const getColorThemeClasses = (theme, isDark) => {
+  const themes = {
+    blue: {
+      color: 'text-blue-500',
+      bg: isDark ? 'bg-blue-950/30' : 'bg-blue-50'
+    },
+    red: {
+      color: 'text-red-500',
+      bg: isDark ? 'bg-red-950/30' : 'bg-red-50'
+    },
+    green: {
+      color: 'text-green-500',
+      bg: isDark ? 'bg-green-950/30' : 'bg-green-50'
+    },
+    purple: {
+      color: 'text-purple-500',
+      bg: isDark ? 'bg-purple-950/30' : 'bg-purple-50'
+    },
+    amber: {
+      color: 'text-amber-500',
+      bg: isDark ? 'bg-amber-950/30' : 'bg-amber-50'
+    }
+  };
+  return themes[theme] || themes.blue;
+};
+
+// --- DEFAULT ALAMOGORDO CITY CHARTER ARTICLES ---
+const defaultCharterArticles = [
+  {
+    id: 'article-1',
+    num: 'I',
+    title: 'Powers of the City',
+    summary: 'Establishes the City of Alamogordo as a municipal corporation under New Mexico law and grants it all powers of local self-government, including the ability to adopt ordinances, levy taxes, and manage municipal services.',
+    sections: [
+      { title: 'Section 1.01 - Body Politic', text: 'The inhabitants of the City of Alamogordo, New Mexico, within the boundaries now established or as hereafter established, shall continue to be a body politic and corporate under the name of the City of Alamogordo.' },
+      { title: 'Section 1.02 - Powers of the City', text: 'The City shall have all powers possible for a city to have under the Constitution and laws of New Mexico, as fully and completely as though they were specifically enumerated in this Charter. These powers shall be exercised in the manner prescribed in this Charter, or if not prescribed, then as established by ordinance or state law.' },
+      { title: 'Section 1.03 - Construction of Powers', text: 'The powers of the City under this Charter shall be construed liberally in favor of the City, and the specific mention of particular powers shall not be deemed to limit in any way the general powers stated in this article.' }
+    ]
+  },
+  {
+    id: 'article-2',
+    num: 'II',
+    title: 'Elections, Initiatives & Recalls',
+    summary: 'Governs local elections, voter eligibility, initiative and referendum petitions, and the formal recall process for elected officials.',
+    sections: [
+      { title: 'Section 2.01 - Elective Offices', text: 'The elective offices of the city shall be a Mayor, elected at-large, and six Commissioners, elected from districts. Elections shall be non-partisan and conducted under the New Mexico Local Election Act.' },
+      { title: 'Section 2.02 - The Recall Process', text: 'Any elected official of the City of Alamogordo may be recalled from office by the registered voters. A petition for recall must state specific grounds (such as malfeasance, misfeasance, or neglect of duty) and must be signed by registered voters of the district (or at-large for the Mayor) equal in number to at least twenty percent (20%) of the total votes cast for the office at the last regular municipal election. Signatures must be collected and certified by the City Clerk within the designated legal timeframe.' },
+      { title: 'Section 2.03 - Initiative and Referendum', text: 'The voters of the City have the power of initiative to propose ordinances to the Commission and referendum to require reconsideration of any adopted ordinance. Petitions require signatures from registered voters equal to fifteen percent (15%) of the total qualified electors of the city.' }
+    ]
+  },
+  {
+    id: 'article-3',
+    num: 'III',
+    title: 'The City Commission',
+    summary: 'Defines the governing body of the city, including qualifications for candidacy, terms of office, composition, compensation rules, and meeting procedures.',
+    sections: [
+      { title: 'Section 3.01 - Composition and Terms', text: 'The City Commission consists of the Mayor and six Commissioners. They are elected for staggered four-year terms, with three commissioners elected every two years.' },
+      { title: 'Section 3.02 - Qualifications for Candidacy', text: 'Candidates for City Commission must be registered voters of the City and must reside within the boundaries of the district they seek to represent at the time of filing. The Mayor must be a resident of the City at-large.' },
+      { title: 'Section 3.03 - Vacancies and Forfeiture', text: 'The office of a commissioner or mayor becomes vacant upon death, resignation, removal from office, or moving out of the city or district. Vacancies are filled by appointment by a majority vote of the remaining members of the Commission.' },
+      { title: 'Section 3.04 - Mayor and Mayor Pro Tem', text: 'The Mayor presides at meetings of the Commission and is recognized as the head of the City government for ceremonial purposes. The Commission elects a Mayor Pro Tem from its members to act in the absence of the Mayor.' }
+    ]
+  },
+  {
+    id: 'article-4',
+    num: 'IV',
+    title: 'Administrative Service',
+    summary: 'Details the appointment, duties, and removal of the City Manager, who serves as the chief administrative officer. It also governs the City Clerk, City Treasurer, and City Attorney.',
+    sections: [
+      { title: 'Section 4.01 - Appointment of City Manager', text: 'The Commission appoints a City Manager for an indefinite term. The selection is based solely on professional and administrative qualifications. The Manager serves at the pleasure of the Commission.' },
+      { title: 'Section 4.02 - Duties of the City Manager', text: 'The City Manager is the chief administrative officer of the City, responsible to the Commission for the administration of all City affairs. Duties include appointing and supervising department heads, preparing the annual budget, and executing Commission policies.' },
+      { title: 'Section 4.03 - Appointment of Charter Officers', text: 'The Commission appoints a City Attorney and a City Clerk, who serve at the pleasure of the Commission and advise both the Commission and the administration on legal and administrative records.' }
+    ]
+  },
+  {
+    id: 'article-5',
+    num: 'V',
+    title: 'Personnel System',
+    summary: 'Establishes a merit-based system for city employees, prohibiting political hiring and assuring fair employment practices.',
+    sections: [
+      { title: 'Section 5.01 - Merit System', text: 'All appointments and promotions of City officers and employees shall be made solely on the basis of merit and fitness, demonstrated by examination or other evidence of competence.' },
+      { title: 'Section 5.02 - Personnel Rules', text: 'The City Manager shall prepare personnel rules and regulations, to be adopted by ordinance by the Commission, governing hiring, compensation, discipline, and grievances.' }
+    ]
+  },
+  {
+    id: 'article-6',
+    num: 'VI',
+    title: 'Finance & Budget',
+    summary: 'Governs how municipal funds are raised, budgeted, and audited annually to ensure financial integrity.',
+    sections: [
+      { title: 'Section 6.01 - Fiscal Year', text: 'The fiscal year of the City shall begin on the first day of July and end on the last day of June of the succeeding year.' },
+      { title: 'Section 6.02 - Budget Submission', text: 'The City Manager shall submit a proposed budget to the Commission at least forty-five days before the end of each fiscal year. The budget shall provide a complete financial plan for all City funds.' },
+      { title: 'Section 6.03 - Annual Audit', text: 'The Commission shall designate an independent certified public accountant to conduct an annual audit of all City accounts and financial transactions.' }
+    ]
+  },
+  {
+    id: 'article-7',
+    num: 'VII',
+    title: 'Taxation & Revenue',
+    summary: 'Authorizes and restricts the city\'s power to levy property, gross receipts, and franchise taxes under New Mexico state limits.',
+    sections: [
+      { title: 'Section 7.01 - Taxing Authority', text: 'The City shall have the power to levy taxes, assess fees, and collect revenues for municipal purposes as authorized by the Constitution and laws of New Mexico.' }
+    ]
+  },
+  {
+    id: 'article-8',
+    num: 'VIII',
+    title: 'Franchises & Utilities',
+    summary: 'Rules for granting franchises to private utility companies and managing municipal utilities like water and wastewater systems.',
+    sections: [
+      { title: 'Section 8.01 - Utility Franchises', text: 'No franchise or easement to use the public streets or properties of the City shall be granted without approval by ordinance, restricting terms to a maximum of twenty-five years.' }
+    ]
+  },
+  {
+    id: 'article-9',
+    num: 'IX',
+    title: 'Planning & Zoning',
+    summary: 'Outlines the powers of the Planning and Zoning Commission and the adoption of the City master development plan.',
+    sections: [
+      { title: 'Section 9.01 - Planning Commission', text: 'The Commission shall establish a Planning and Zoning Commission to advise on the physical development of the City and review land use requests.' }
+    ]
+  },
+  {
+    id: 'article-10',
+    num: 'X',
+    title: 'Ordinances',
+    summary: 'The formal legislative procedure required for the City Commission to pass local laws and emergency declarations.',
+    sections: [
+      { title: 'Section 10.01 - Action by Ordinance', text: 'Legislative acts of the Commission shall be by ordinance. Every proposed ordinance shall be introduced in writing and read by title at a public meeting before final vote.' }
+    ]
+  },
+  {
+    id: 'article-11',
+    num: 'XI',
+    title: 'Transparency',
+    summary: 'Guarantees open meetings, public access to government records, and ethical standards for city officials.',
+    sections: [
+      { title: 'Section 11.01 - Open Meetings', text: 'All meetings of the Commission and advisory boards shall be open to the public, except as authorized by the New Mexico Open Meetings Act.' }
+    ]
+  },
+  {
+    id: 'article-12',
+    num: 'XII',
+    title: 'Schedule & Transition',
+    summary: 'Contains the legal mechanics for transitioning local laws and saving existing contracts when the charter is amended.',
+    sections: [
+      { title: 'Section 12.01 - Continuity', text: 'All ordinances, resolutions, and regulations of the City in force at the time this Charter takes effect shall continue in full force until amended or repealed.' }
+    ]
+  }
+];
+
+const defaultQuickLinks = [
+  { id: 'ql-1', title: "Elections & Candidacy", desc: "Requirements for commission candidacy and general municipal elections.", articleId: "article-3", icon: "Users", colorTheme: "blue" },
+  { id: 'ql-2', title: "How Recalls Work", desc: "Specific petition guidelines, legal reasons, and signature counts required.", articleId: "article-2", icon: "ShieldAlert", colorTheme: "red" },
+  { id: 'ql-3', title: "Commission Powers", desc: "Review the general legislative authority and limits of local government.", articleId: "article-1", icon: "Scale", colorTheme: "green" },
+  { id: 'ql-4', title: "City Manager Duties", desc: "The professional responsibilities of the chief administrative officer.", articleId: "article-4", icon: "FileText", colorTheme: "purple" }
+];
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -113,6 +286,12 @@ export default function App() {
   const [expandedMeetings, setExpandedMeetings] = useState([]);
   const [hasInitializedExpansion, setHasInitializedExpansion] = useState(false);
   
+  // Real-time Charter States
+  const [charterArticles, setCharterArticles] = useState([]);
+  const [quickLinks, setQuickLinks] = useState([]);
+  const [activeCharterArticle, setActiveCharterArticle] = useState('article-1');
+  const [charterMessage, setCharterMessage] = useState("");
+
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isAddingMeeting, setIsAddingMeeting] = useState(false);
   const [editingMeeting, setEditingMeeting] = useState(null);
@@ -121,10 +300,36 @@ export default function App() {
   const [editingItem, setEditingItem] = useState(null);
   const [isAddingItemToMeeting, setIsAddingItemToMeeting] = useState(null);
 
+  // Administrative Charter Editing States
+  const [editingCharterArticle, setEditingCharterArticle] = useState(null);
+  const [isAddingCharterArticle, setIsAddingCharterArticle] = useState(false);
+  const [editingQuickLink, setEditingQuickLink] = useState(null);
+  const [isAddingQuickLink, setIsAddingQuickLink] = useState(false);
+  const [modalSections, setModalSections] = useState([{ title: '', text: '' }]);
+
   const [loginError, setLoginError] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const isAdmin = user && !user.isAnonymous;
+
+  // Compute active variables with Firestore values or hardcoded defaults as a fallback
+  const displayArticles = useMemo(() => {
+    return charterArticles.length > 0 ? charterArticles : defaultCharterArticles;
+  }, [charterArticles]);
+
+  const displayQuickLinks = useMemo(() => {
+    return quickLinks.length > 0 ? quickLinks : defaultQuickLinks;
+  }, [quickLinks]);
+
+  // Adjust active article ID if it is no longer valid in our list
+  useEffect(() => {
+    if (displayArticles.length > 0) {
+      const exists = displayArticles.some(a => a.id === activeCharterArticle);
+      if (!exists) {
+        setActiveCharterArticle(displayArticles[0].id);
+      }
+    }
+  }, [displayArticles, activeCharterArticle]);
 
   // Track page views
   useEffect(() => {
@@ -161,9 +366,22 @@ export default function App() {
       const sorted = data.sort((a, b) => new Date(b.date) - new Date(a.date));
       setMeetings(sorted);
     }, (err) => console.error("Firestore error:", err));
+
+    const charterRef = collection(db, 'artifacts', appId, 'public', 'data', 'charterArticles');
+    const unsubscribeCharter = onSnapshot(charterRef, (snapshot) => {
+      setCharterArticles(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (err) => console.error("Firestore charterArticles error:", err));
+
+    const quickLinksRef = collection(db, 'artifacts', appId, 'public', 'data', 'charterQuickLinks');
+    const unsubscribeQuickLinks = onSnapshot(quickLinksRef, (snapshot) => {
+      setQuickLinks(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (err) => console.error("Firestore charterQuickLinks error:", err));
+
     return () => {
       unsubscribeComm();
       unsubscribeMeet();
+      unsubscribeCharter();
+      unsubscribeQuickLinks();
     };
   }, [user]);
 
@@ -251,6 +469,8 @@ export default function App() {
       description: formData.get('description'),
       status: formData.get('status'),
       timestampUrl: formData.get('timestampUrl'),
+      isConsentAgenda: formData.get('isConsentAgenda') === 'on',
+      isRemovedFromConsent: formData.get('isRemovedFromConsent') === 'on',
       votes: editingItem ? editingItem.itemData.votes : Object.fromEntries(rosterIds.map(id => [id, "Yes"]))
     };
 
@@ -259,6 +479,82 @@ export default function App() {
     else updatedItems.push(newItemData);
     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meetingId), { items: updatedItems });
     setEditingItem(null); setIsAddingItemToMeeting(null);
+  };
+
+  const handleCharterArticleSubmit = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = {
+      num: formData.get('num'),
+      title: formData.get('title'),
+      summary: formData.get('summary'),
+      sections: modalSections
+    };
+
+    if (editingCharterArticle) {
+      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'charterArticles', editingCharterArticle.id), data);
+      setEditingCharterArticle(null);
+      setCharterMessage(`Updated Article ${data.num}`);
+    } else {
+      const newId = 'article-' + crypto.randomUUID().substring(0, 8);
+      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'charterArticles', newId), data);
+      setIsAddingCharterArticle(false);
+      setCharterMessage(`Added Article ${data.num}`);
+    }
+  };
+
+  const handleQuickLinkSubmit = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const theme = formData.get('colorTheme');
+
+    const data = {
+      title: formData.get('title'),
+      desc: formData.get('desc'),
+      articleId: formData.get('articleId'),
+      icon: formData.get('icon'),
+      colorTheme: theme
+    };
+
+    if (editingQuickLink) {
+      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'charterQuickLinks', editingQuickLink.id), data);
+      setEditingQuickLink(null);
+      setCharterMessage(`Updated Link "${data.title}"`);
+    } else {
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'charterQuickLinks'), data);
+      setIsAddingQuickLink(false);
+      setCharterMessage(`Created Link "${data.title}"`);
+    }
+  };
+
+  const handleInitializeDefaultCharter = async () => {
+    if (!isAdmin) return;
+    setCharterMessage("Initializing database with default Alamogordo Charter...");
+    try {
+      for (const art of defaultCharterArticles) {
+        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'charterArticles', art.id);
+        await setDoc(docRef, {
+          num: art.num,
+          title: art.title,
+          summary: art.summary,
+          sections: art.sections
+        });
+      }
+      for (const ql of defaultQuickLinks) {
+        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'charterQuickLinks', ql.id);
+        await setDoc(docRef, {
+          title: ql.title,
+          desc: ql.desc,
+          articleId: ql.articleId,
+          icon: ql.icon,
+          colorTheme: ql.colorTheme
+        });
+      }
+      setCharterMessage("Successfully populated database with default Alamogordo Charter!");
+    } catch (err) {
+      console.error("Initialization failed:", err);
+      setCharterMessage(`Error during setup: ${err.message}`);
+    }
   };
 
   const updateVote = async (meetingId, itemIndex, commId, current) => {
@@ -373,11 +669,12 @@ export default function App() {
           <div className="bg-blue-600 p-2.5 rounded-2xl shadow-lg shadow-blue-500/20"><Database size={24} /></div>
           <h1 className="font-black text-2xl tracking-tighter text-white">CivicWatch</h1>
         </div>
-        <nav className="space-y-2 flex-1">
+        <nav className="space-y-2 flex-1 text-slate-300">
           {[
             { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard }, 
             { id: 'commissioners', label: 'Commissioners', icon: Users }, 
             { id: 'meetings', label: 'Archive', icon: Calendar },
+            { id: 'charter', label: 'City Charter', icon: Scroll },
             { id: 'about', label: 'About', icon: Info }
           ].map((tab) => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all font-bold ${activeTab === tab.id ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/20 translate-x-1' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
@@ -418,6 +715,7 @@ export default function App() {
           { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
           { id: 'commissioners', label: 'Members', icon: Users },
           { id: 'meetings', label: 'Archive', icon: Calendar },
+          { id: 'charter', label: 'Charter', icon: Scroll },
           { id: 'about', label: 'About', icon: Info },
         ].map((tab) => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex flex-col items-center gap-1 transition-colors ${activeTab === tab.id ? 'text-blue-600' : 'text-slate-400'}`}>
@@ -435,7 +733,7 @@ export default function App() {
         <header className="mb-14 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
           <div className="flex flex-col">
             <h2 className={`text-4xl lg:text-5xl font-black tracking-tight mb-2 uppercase ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-              {activeTab === 'dashboard' ? 'Insight Hub' : activeTab === 'commissioners' ? 'Representatives' : activeTab === 'about' ? 'Transparency' : 'Archives'}
+              {activeTab === 'dashboard' ? 'Insight Hub' : activeTab === 'commissioners' ? 'Representatives' : activeTab === 'charter' ? 'City Charter' : activeTab === 'about' ? 'Transparency' : 'Archives'}
             </h2>
             <p className="text-slate-500 font-semibold text-lg">Public accountability for Alamogordo.</p>
           </div>
@@ -706,8 +1004,17 @@ export default function App() {
                               )}
                               <div className="flex flex-col lg:flex-row justify-between items-start mb-12 gap-10">
                                 <div className="max-w-4xl">
-                                  <div className="flex items-center gap-3 mb-5">
+                                  <div className="flex items-center gap-3 mb-5 flex-wrap">
                                     <span className={`text-[11px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full inline-block ${isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-700'}`}>{item.category}</span>
+                                    
+                                    {item.isConsentAgenda && !item.isRemovedFromConsent && (
+                                      <span className={`text-[11px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full inline-block ${isDarkMode ? 'bg-purple-900/30 text-purple-400' : 'bg-purple-100 text-purple-700'}`}>Consent Agenda</span>
+                                    )}
+
+                                    {item.isRemovedFromConsent && (
+                                      <span className={`text-[11px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full inline-block ${isDarkMode ? 'bg-amber-900/30 text-amber-400' : 'bg-amber-100 text-amber-700'}`}>Pulled from Consent</span>
+                                    )}
+
                                     {item.timestampUrl && (
                                       <a href={item.timestampUrl} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full transition-transform hover:scale-105 ${isDarkMode ? 'bg-red-900/30 text-red-400' : 'bg-red-100 text-red-700'}`}>
                                         <Youtube size={14} /> Watch Segment
@@ -788,6 +1095,212 @@ export default function App() {
           </div>
         )}
 
+        {activeTab === 'charter' && (
+          <div className="space-y-10 animate-in fade-in duration-500">
+            {/* System Notification Banner */}
+            {charterMessage && (
+              <div className="p-4 bg-blue-600/10 border border-blue-500/20 text-blue-500 dark:text-blue-400 rounded-3xl flex items-center justify-between shadow-sm">
+                <div className="flex items-center gap-2">
+                  <Info size={18} />
+                  <span className="font-bold text-sm">{charterMessage}</span>
+                </div>
+                <button onClick={() => setCharterMessage("")} className="hover:text-blue-600 dark:hover:text-blue-200"><X size={18} /></button>
+              </div>
+            )}
+
+            {/* Quick Topic Jump Links */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+              {displayQuickLinks.map((topic, i) => {
+                const IconComponent = iconMap[topic.icon] || HelpCircle;
+                const colors = getColorThemeClasses(topic.colorTheme || 'blue', isDarkMode);
+                return (
+                  <div 
+                    key={topic.id || i}
+                    className={`p-6 rounded-[32px] border text-left relative group/card transition-all duration-300 ${
+                      activeCharterArticle === topic.articleId 
+                        ? (isDarkMode ? "border-blue-500 bg-slate-900" : "border-blue-500 bg-white shadow-lg") 
+                        : (isDarkMode ? "bg-slate-950 border-slate-800 hover:border-slate-700" : "bg-white border-slate-100 hover:border-slate-200")
+                    }`}
+                  >
+                    {isAdmin && (
+                      <div className="absolute top-4 right-4 flex gap-1 z-10 opacity-0 group-hover/card:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => setEditingQuickLink(topic)}
+                          className="p-1.5 text-slate-400 hover:text-blue-500 transition-colors"
+                        >
+                          <Edit2 size={12} />
+                        </button>
+                        <button 
+                          onClick={async () => {
+                            if (window.confirm(`Delete jump link "${topic.title}"?`)) {
+                              await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'charterQuickLinks', topic.id));
+                              setCharterMessage(`Deleted "${topic.title}" jump link`);
+                            }
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    )}
+
+                    <button 
+                      onClick={() => setActiveCharterArticle(topic.articleId)}
+                      className="w-full text-left"
+                    >
+                      <div className={`${colors.bg} ${colors.color} p-4 rounded-2xl w-fit mb-4`}>
+                        <IconComponent size={24} />
+                      </div>
+                      <h4 className={`font-black text-lg mb-2 leading-snug ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{topic.title}</h4>
+                      <p className="text-xs text-slate-500 font-semibold leading-relaxed">{topic.desc}</p>
+                    </button>
+                  </div>
+                );
+              })}
+
+              {isAdmin && (
+                <button 
+                  onClick={() => setIsAddingQuickLink(true)}
+                  className="p-6 rounded-[32px] border-2 border-dashed border-slate-300 dark:border-slate-800 flex flex-col items-center justify-center text-center gap-2 text-slate-400 hover:text-blue-500 hover:border-blue-500 transition-all duration-300"
+                >
+                  <Plus size={32} />
+                  <span className="font-bold text-sm">Add Jump Link</span>
+                </button>
+              )}
+            </div>
+
+            {/* Dual Panel Layout */}
+            <div className="flex flex-col lg:flex-row gap-10">
+              {/* Left panel: List of 12 articles */}
+              <div className="w-full lg:w-1/3 space-y-3">
+                <div className={`p-4 rounded-[28px] border mb-4 flex items-center justify-between ${isDarkMode ? 'bg-slate-900/50 border-slate-800' : 'bg-slate-100/50 border-slate-200'}`}>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2">Table of Articles</p>
+                  {isAdmin && (
+                    <button 
+                      onClick={handleInitializeDefaultCharter}
+                      className="text-[9px] font-black uppercase tracking-widest text-orange-500 hover:text-orange-600 px-2 py-1 bg-orange-500/10 rounded-lg"
+                      title="Load/Reset default Alamogordo Charter data"
+                    >
+                      Reset Defaults
+                    </button>
+                  )}
+                </div>
+                
+                <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                  {displayArticles.map((art) => {
+                    const isActive = activeCharterArticle === art.id;
+                    return (
+                      <div
+                        key={art.id}
+                        onClick={() => setActiveCharterArticle(art.id)}
+                        className={`w-full flex items-center justify-between p-4 rounded-2xl border text-left cursor-pointer transition-all group/artrow ${
+                          isActive 
+                            ? (isDarkMode ? 'bg-blue-600 border-blue-500 text-white shadow-lg' : 'bg-blue-600 border-blue-500 text-white shadow-xl shadow-blue-600/20')
+                            : (isDarkMode ? 'bg-slate-950 border-slate-800 text-slate-400 hover:bg-slate-900 hover:text-white' : 'bg-white border-slate-100 text-slate-600 hover:bg-slate-50 hover:text-slate-900')
+                        }`}
+                      >
+                        <div className="flex items-center gap-4 min-w-0 flex-1">
+                          <span className={`font-black text-sm px-3 py-1.5 rounded-lg shrink-0 ${isActive ? 'bg-white/20 text-white' : (isDarkMode ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600')}`}>
+                            {art.num}
+                          </span>
+                          <span className="font-bold text-sm truncate">{art.title}</span>
+                        </div>
+
+                        {isAdmin && (
+                          <div className="flex gap-1 opacity-0 group-hover/artrow:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                            <button 
+                              onClick={() => {
+                                setEditingCharterArticle(art);
+                                setModalSections(art.sections || [{ title: '', text: '' }]);
+                              }}
+                              className={`p-1 hover:text-orange-400 ${isActive ? 'text-white' : 'text-slate-400'}`}
+                            >
+                              <Edit2 size={12} />
+                            </button>
+                            <button 
+                              onClick={async () => {
+                                if (window.confirm(`Delete Article ${art.num}?`)) {
+                                  await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'charterArticles', art.id));
+                                  setCharterMessage(`Deleted Article ${art.num}`);
+                                }
+                              }}
+                              className={`p-1 hover:text-red-400 ${isActive ? 'text-white' : 'text-slate-400'}`}
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {isAdmin && (
+                    <button 
+                      onClick={() => {
+                        setIsAddingCharterArticle(true);
+                        setModalSections([{ title: '', text: '' }]);
+                      }}
+                      className="w-full py-4 bg-blue-600/10 hover:bg-blue-600/20 text-blue-500 font-bold rounded-2xl flex items-center justify-center gap-2 text-sm border-2 border-dashed border-blue-500/20 transition-all"
+                    >
+                      <Plus size={16} /> New Article
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Right panel: Active Article detailed view */}
+              <div className="flex-1">
+                {(() => {
+                  const art = displayArticles.find(a => a.id === activeCharterArticle);
+                  if (!art) {
+                    return (
+                      <div className="p-14 text-center text-slate-400 italic">
+                        Select a charter article to view its details.
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className={`p-8 md:p-12 rounded-[44px] border shadow-sm transition-colors ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-100'}`}>
+                      {/* Article Title */}
+                      <div className="flex items-center gap-4 mb-8">
+                        <span className={`font-black text-2xl px-5 py-2.5 rounded-2xl ${isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-50 text-blue-600'}`}>
+                          Article {art.num}
+                        </span>
+                        <h3 className={`text-3xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{art.title}</h3>
+                      </div>
+
+                      {/* Plain English Summary Box */}
+                      <div className={`p-6 rounded-3xl border mb-10 flex items-start gap-4 ${isDarkMode ? 'bg-slate-900/40 border-slate-800' : 'bg-blue-50/50 border-blue-100/50'}`}>
+                        <Info className="text-blue-500 shrink-0 mt-0.5" size={24} />
+                        <div>
+                          <h4 className="text-[11px] font-black uppercase tracking-widest text-blue-500 mb-2">Plain English Summary</h4>
+                          <p className={`text-sm font-semibold leading-relaxed ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                            {art.summary}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Section Details */}
+                      <div className="space-y-8">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-4 mb-6">Charter Provisions</p>
+                        {art.sections?.map((sec, idx) => (
+                          <div key={idx} className={`p-6 rounded-3xl border transition-colors ${isDarkMode ? 'bg-slate-950/50 border-slate-800/60 hover:border-slate-800' : 'bg-slate-50/50 border-slate-100 hover:border-slate-200/60'}`}>
+                            <h4 className={`font-black text-lg mb-3 ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>{sec.title}</h4>
+                            <p className={`text-sm leading-relaxed font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{sec.text}</p>
+                          </div>
+                        ))}
+                        {(!art.sections || art.sections.length === 0) && (
+                          <p className="text-slate-400 italic text-sm">No section details logged for this article.</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
+        )}
+
         {activeTab === 'about' && (
           <div className="max-w-4xl space-y-10 animate-in fade-in duration-500">
             {/* WIP Section */}
@@ -830,7 +1343,7 @@ export default function App() {
               <h3 className={`text-2xl font-black mb-6 flex items-center gap-3 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}><FileText className="text-blue-500" /> Curation & Methodology</h3>
               <div className={`space-y-4 text-lg leading-relaxed font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                 <p>
-                  The goal of this tracker is to highlight high impact decisions regarding city policy, financial contracts, and community infrastructure. 
+                  The goal of this tracker is to focus on high impact decisions regarding city policy, financial contracts, and community infrastructure. 
                 </p>
                 <p>
                   To keep the Insight Hub focused on substantive data, <span className={`font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>purely procedural items</span> (such as the approval of meeting minutes, invocation, or adjournment) are generally excluded from this tracker. 
@@ -869,6 +1382,151 @@ export default function App() {
         )}
 
         {/* --- MODALS --- */}
+
+        {/* Modal: Add/Edit Charter Article */}
+        {(isAddingCharterArticle || editingCharterArticle) && (
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[120] flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
+            <div className={`rounded-[32px] md:rounded-[56px] w-full max-w-2xl p-6 md:p-12 shadow-2xl max-h-[90vh] overflow-y-auto transition-colors ${isDarkMode ? 'bg-slate-950' : 'bg-white'}`}>
+              <div className="flex justify-between items-center mb-10">
+                <h3 className={`text-2xl md:text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                  {editingCharterArticle ? `Modify Article ${editingCharterArticle.num}` : "Create Charter Article"}
+                </h3>
+                <button onClick={() => {setIsAddingCharterArticle(false); setEditingCharterArticle(null);}} className="text-slate-300 hover:text-slate-600 transition-colors"><X size={32}/></button>
+              </div>
+              
+              <form onSubmit={handleCharterArticleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                   <div className="space-y-2">
+                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Roman Numeral</label>
+                     <input name="num" placeholder="e.g. I, II, III" required defaultValue={editingCharterArticle?.num} className={`w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} />
+                   </div>
+                   <div className="col-span-2 space-y-2">
+                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Article Title</label>
+                     <input name="title" placeholder="e.g. Powers of the City" required defaultValue={editingCharterArticle?.title} className={`w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} />
+                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Plain English Summary</label>
+                  <textarea name="summary" placeholder="Provide a summary translation..." rows="3" required defaultValue={editingCharterArticle?.summary} className={`w-full p-4 border-2 rounded-3xl font-semibold outline-none transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`}></textarea>
+                </div>
+
+                {/* Subsections Array Editor */}
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Charter Sections / Provisions</label>
+                  <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                    {modalSections.map((sec, idx) => (
+                      <div key={idx} className={`p-5 rounded-2xl border-2 relative space-y-3 ${isDarkMode ? 'bg-slate-900 border-slate-800/80' : 'bg-slate-50 border-slate-100'}`}>
+                        <button 
+                          type="button" 
+                          onClick={() => setModalSections(modalSections.filter((_, i) => i !== idx))}
+                          className="absolute top-4 right-4 text-slate-400 hover:text-red-500 transition-colors"
+                        >
+                          <X size={16} />
+                        </button>
+                        <input 
+                          placeholder={`Section Code (e.g. Section ${idx + 1}.01 - Name)`}
+                          value={sec.title}
+                          onChange={(e) => {
+                            const next = [...modalSections];
+                            next[idx].title = e.target.value;
+                            setModalSections(next);
+                          }}
+                          required
+                          className={`w-full p-3 border rounded-xl font-bold text-xs ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-100'}`}
+                        />
+                        <textarea 
+                          placeholder="Provision text..."
+                          value={sec.text}
+                          onChange={(e) => {
+                            const next = [...modalSections];
+                            next[idx].text = e.target.value;
+                            setModalSections(next);
+                          }}
+                          required
+                          rows="2"
+                          className={`w-full p-3 border rounded-xl font-medium text-xs ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-100'}`}
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  <button 
+                    type="button" 
+                    onClick={() => setModalSections([...modalSections, { title: '', text: '' }])}
+                    className="w-full py-3 border-2 border-dashed border-blue-500/30 hover:border-blue-500 text-blue-500 font-bold rounded-2xl text-xs transition-colors"
+                  >
+                    + Add Section Block
+                  </button>
+                </div>
+
+                <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-[24px] font-black text-xl shadow-2xl transition-transform active:scale-95">Save Article Configuration</button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal: Add/Edit Topic Jump Link */}
+        {(isAddingQuickLink || editingQuickLink) && (
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[120] flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
+            <div className={`rounded-[32px] md:rounded-[56px] w-full max-w-lg p-6 md:p-12 shadow-2xl transition-colors ${isDarkMode ? 'bg-slate-950' : 'bg-white'}`}>
+              <div className="flex justify-between items-center mb-10">
+                <h3 className={`text-2xl md:text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                  {editingQuickLink ? "Modify Topic Link" : "Create Topic Link"}
+                </h3>
+                <button onClick={() => {setIsAddingQuickLink(false); setEditingQuickLink(null);}} className="text-slate-300 hover:text-slate-600 transition-colors"><X size={32}/></button>
+              </div>
+
+              <form onSubmit={handleQuickLinkSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Topic Title</label>
+                  <input name="title" placeholder="e.g. How Recalls Work" required defaultValue={editingQuickLink?.title} className={`w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Quick Description</label>
+                  <input name="desc" placeholder="One sentence description..." required defaultValue={editingQuickLink?.desc} className={`w-full p-4 border-2 rounded-2xl font-semibold outline-none transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Target Article Link</label>
+                    <select name="articleId" defaultValue={editingQuickLink?.articleId} className={`w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`}>
+                      {displayArticles.map(art => (
+                        <option key={art.id} value={art.id}>Article {art.num} - {art.title}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Icon Preset</label>
+                    <select name="icon" defaultValue={editingQuickLink?.icon || "HelpCircle"} className={`w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`}>
+                      <option value="Users">Users (Candidacy)</option>
+                      <option value="ShieldAlert">ShieldAlert (Recall/Security)</option>
+                      <option value="Scale">Scale (Powers/Legal)</option>
+                      <option value="FileText">FileText (Manager/Rules)</option>
+                      <option value="BookOpen">BookOpen (Library)</option>
+                      <option value="HelpCircle">HelpCircle (General Help)</option>
+                      <option value="Scroll">Scroll (Ordinance)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Color Theme</label>
+                  <select name="colorTheme" defaultValue={editingQuickLink?.colorTheme || "blue"} className={`w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`}>
+                    <option value="blue">Blue (Corporate)</option>
+                    <option value="red">Red (Warning/Important)</option>
+                    <option value="green">Green (Authority/Ecology)</option>
+                    <option value="purple">Purple (Policy/Procedure)</option>
+                    <option value="amber">Amber (Information/Special)</option>
+                  </select>
+                </div>
+
+                <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-[24px] font-black text-xl shadow-2xl transition-transform active:scale-95">Save Topic Link</button>
+              </form>
+            </div>
+          </div>
+        )}
 
         {(isAddingMeeting || editingMeeting) && (
           <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[100] flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
@@ -916,6 +1574,18 @@ export default function App() {
                 <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Agenda Title</label><input name="title" placeholder="Official Title" required defaultValue={editingItem?.itemData.title} className={`w-full p-4 border-2 rounded-2xl font-bold text-lg outline-none transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
                 <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">YouTube Segment URL (Optional)</label><input name="timestampUrl" placeholder="https://..." defaultValue={editingItem?.itemData.timestampUrl} className={`w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
                 <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Public Summary</label><textarea name="description" placeholder="Description..." rows="4" defaultValue={editingItem?.itemData.description} className={`w-full p-4 border-2 rounded-3xl text-lg outline-none transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`}></textarea></div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-colors ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
+                     <input type="checkbox" name="isConsentAgenda" id="isConsentAgenda" defaultChecked={editingItem?.itemData?.isConsentAgenda} className="w-6 h-6 rounded border-slate-300 text-purple-600" />
+                     <label htmlFor="isConsentAgenda" className={`text-sm font-black uppercase tracking-widest ${isDarkMode ? 'text-slate-400' : 'text-slate-700'}`}>Consent Agenda</label>
+                  </div>
+                  <div className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-colors ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
+                     <input type="checkbox" name="isRemovedFromConsent" id="isRemovedFromConsent" defaultChecked={editingItem?.itemData?.isRemovedFromConsent} className="w-6 h-6 rounded border-slate-300 text-amber-600" />
+                     <label htmlFor="isRemovedFromConsent" className={`text-sm font-black uppercase tracking-widest ${isDarkMode ? 'text-slate-400' : 'text-slate-700'}`}>Pulled from Consent</label>
+                  </div>
+                </div>
+
                 <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-[24px] font-black text-xl shadow-2xl transition-transform active:scale-95">Save Item</button>
               </form>
             </div>
