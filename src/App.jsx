@@ -79,7 +79,8 @@ import {
   Scroll,
   Scale,
   BookOpen,
-  HelpCircle
+  HelpCircle,
+  Award
 } from 'lucide-react';
 
 // --- FIREBASE CONFIGURATION ---
@@ -1626,7 +1627,7 @@ export default function App() {
 
         {isLoginModalOpen && (
           <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
-            <div className={`rounded-[40px] w-full max-md p-10 shadow-2xl relative transition-colors ${isDarkMode ? 'bg-slate-950' : 'bg-white'}`}><div className="flex justify-between items-center mb-10"><h3 className={`text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Admin Portal</h3><button onClick={() => setIsLoginModalOpen(false)} className="text-slate-300 hover:text-slate-600 transition-colors"><X size={32}/></button></div>{loginError && (<div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600 text-sm font-bold"><AlertCircle size={20} /> {loginError}</div>)}<form onSubmit={handleLogin} className="space-y-6"><input name="email" type="email" required placeholder="Email" className={`w-full p-4 border-2 rounded-2xl outline-none font-bold transition-all ${isDarkMode ? 'bg-slate-900 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /><input name="password" type="password" required placeholder="Password" className={`w-full p-4 border-2 rounded-2xl outline-none font-bold transition-all ${isDarkMode ? 'bg-slate-900 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /><button type="submit" disabled={isLoggingIn} className="w-full bg-slate-900 text-white py-5 rounded-[24px] font-black text-lg disabled:opacity-50 transition-transform active:scale-95">{isLoggingIn ? "Signing In..." : "Log In"}</button></form></div>
+            <div className={`rounded-[40px] w-full max-md p-10 shadow-2xl relative transition-colors ${isDarkMode ? 'bg-slate-950' : 'bg-white'}`}><div className="flex justify-between items-center mb-10"><h3 className={`text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Admin Portal</h3><button onClick={() => {setIsLoginModalOpen(false)}} className="text-slate-300 hover:text-slate-600 transition-colors"><X size={32}/></button></div>{loginError && (<div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600 text-sm font-bold"><AlertCircle size={20} /> {loginError}</div>)}<form onSubmit={handleLogin} className="space-y-6"><input name="email" type="email" required placeholder="Email" className={`w-full p-4 border-2 rounded-2xl outline-none font-bold transition-all ${isDarkMode ? 'bg-slate-900 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /><input name="password" type="password" required placeholder="Password" className={`w-full p-4 border-2 rounded-2xl outline-none font-bold transition-all ${isDarkMode ? 'bg-slate-900 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /><button type="submit" disabled={isLoggingIn} className="w-full bg-slate-900 text-white py-5 rounded-[24px] font-black text-lg disabled:opacity-50 transition-transform active:scale-95">{isLoggingIn ? "Signing In..." : "Log In"}</button></form></div>
           </div>
         )}
       </main>
