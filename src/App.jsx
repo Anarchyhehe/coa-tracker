@@ -596,7 +596,7 @@ export default function App() {
         if (editingCharterArticle.order !== undefined) {
           data.order = editingCharterArticle.order;
         }
-        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'charterArticles', editingCharterArticle.id), data);
+        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'charterArticles', editingCharterArticle.id), data, { merge: true });
         setEditingCharterArticle(null);
         setCharterMessage(`Updated Article ${data.num}`);
       } else {
@@ -627,7 +627,7 @@ export default function App() {
 
     try {
       if (editingQuickLink) {
-        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'charterQuickLinks', editingQuickLink.id), data);
+        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'charterQuickLinks', editingQuickLink.id), data, { merge: true });
         setEditingQuickLink(null);
         setCharterMessage(`Updated Link "${data.title}"`);
       } else {
@@ -960,12 +960,12 @@ export default function App() {
                       </tr>
                     </thead>
                     <tbody className={`divide-y ${isDarkMode ? 'divide-slate-800' : 'divide-slate-50'}`}>
-                      {dashboardStats.commPerformance.map((comm) => (
+                      {dashboardStats.commPerformance.filter(c => c.isActive !== false).map((comm) => (
                         <tr key={comm.id} className={`group transition-colors ${isDarkMode ? 'hover:bg-slate-800/50' : 'hover:bg-slate-50/50'}`}>
                           <td className="py-4 flex items-center gap-2">
                              <div>
-                               <p className={`font-bold transition-colors ${comm.isActive ? (isDarkMode ? 'text-slate-200' : 'text-slate-900') : 'text-slate-400 italic'} ${comm.isActive && 'group-hover:text-blue-500'}`}>{comm.name}</p>
-                               <p className="text-[10px] text-slate-400 font-black uppercase tracking-tighter">{comm.district} {!comm.isActive && ' (FORMER)'}</p>
+                               <p className={`font-bold transition-colors ${isDarkMode ? 'text-slate-200' : 'text-slate-900'} group-hover:text-blue-500`}>{comm.name}</p>
+                               <p className="text-[10px] text-slate-400 font-black uppercase tracking-tighter">{comm.district}</p>
                              </div>
                           </td>
                           <td className="py-4 text-center">
@@ -978,6 +978,33 @@ export default function App() {
                           </td>
                         </tr>
                       ))}
+                      {dashboardStats.commPerformance.some(c => c.isActive === false) && (
+                        <>
+                          <tr>
+                            <td colSpan="3" className={`py-3 mt-2 text-[9px] font-black uppercase tracking-widest text-center ${isDarkMode ? 'bg-slate-900/50 text-slate-500' : 'bg-slate-100 text-slate-400'}`}>
+                              Former Members
+                            </td>
+                          </tr>
+                          {dashboardStats.commPerformance.filter(c => c.isActive === false).map((comm) => (
+                            <tr key={comm.id} className={`group opacity-75 transition-colors ${isDarkMode ? 'hover:bg-slate-800/50' : 'hover:bg-slate-50/50'}`}>
+                              <td className="py-4 flex items-center gap-2">
+                                 <div>
+                                   <p className="font-bold text-slate-400 italic transition-colors group-hover:text-slate-500">{comm.name}</p>
+                                   <p className="text-[10px] text-slate-400 font-black uppercase tracking-tighter">{comm.district} (FORMER)</p>
+                                 </div>
+                              </td>
+                              <td className="py-4 text-center">
+                                <span className={`font-black ${comm.yesRate > 75 ? 'text-green-600' : 'text-slate-600'}`}>{comm.yesRate}%</span>
+                              </td>
+                              <td className="py-4 text-right">
+                                 <span className={`text-xs font-black ${comm.participation < 100 ? 'text-red-500' : 'text-slate-500'}`}>
+                                   {comm.participation}%
+                                 </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </>
+                      )}
                     </tbody>
                   </table>
                 </div>
