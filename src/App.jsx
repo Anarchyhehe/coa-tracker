@@ -124,24 +124,24 @@ const iconMap = {
 const getColorThemeClasses = (theme, isDark) => {
   const themes = {
     blue: {
-      color: 'text-blue-500',
-      bg: isDark ? 'bg-blue-950/30' : 'bg-blue-50'
+      color: isDark ? 'text-blue-300' : 'text-blue-800',
+      bg: isDark ? 'bg-blue-900/40' : 'bg-blue-100'
     },
     red: {
-      color: 'text-red-500',
-      bg: isDark ? 'bg-red-950/30' : 'bg-red-50'
+      color: isDark ? 'text-red-300' : 'text-red-800',
+      bg: isDark ? 'bg-red-900/40' : 'bg-red-100'
     },
     green: {
-      color: 'text-green-500',
-      bg: isDark ? 'bg-green-950/30' : 'bg-green-50'
+      color: isDark ? 'text-green-300' : 'text-green-800',
+      bg: isDark ? 'bg-green-900/40' : 'bg-green-100'
     },
     purple: {
-      color: 'text-purple-500',
-      bg: isDark ? 'bg-purple-950/30' : 'bg-purple-50'
+      color: isDark ? 'text-purple-300' : 'text-purple-800',
+      bg: isDark ? 'bg-purple-900/40' : 'bg-purple-100'
     },
     amber: {
-      color: 'text-amber-500',
-      bg: isDark ? 'bg-amber-950/30' : 'bg-amber-50'
+      color: isDark ? 'text-amber-300' : 'text-amber-800',
+      bg: isDark ? 'bg-amber-900/40' : 'bg-amber-100'
     }
   };
   return themes[theme] || themes.blue;
@@ -842,7 +842,12 @@ export default function App() {
             { id: 'charter', label: 'City Charter', icon: Scroll },
             { id: 'about', label: 'About', icon: Info }
           ].map((tab) => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all font-bold ${activeTab === tab.id ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/20 translate-x-1' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+            <button 
+              key={tab.id} 
+              onClick={() => setActiveTab(tab.id)} 
+              aria-label={`Maps to ${tab.label}`}
+              className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 ${activeTab === tab.id ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/20 translate-x-1' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+            >
               <tab.icon size={20} /> {tab.label}
             </button>
           ))}
@@ -851,7 +856,8 @@ export default function App() {
         <div className="mt-auto space-y-4">
           <button 
             onClick={() => setIsDarkMode(!isDarkMode)}
-            className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-slate-800/40 rounded-2xl border border-slate-700/50 text-slate-400 hover:text-white transition-all group"
+            aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+            className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-slate-800/40 rounded-2xl border border-slate-700/50 text-slate-400 hover:text-white transition-all group focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <div className="flex items-center gap-3">
               {isDarkMode ? <Sun size={20} className="text-orange-400" /> : <Moon size={20} className="text-blue-400" />}
@@ -866,10 +872,22 @@ export default function App() {
             {isAdmin ? (
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-orange-400 text-xs font-black uppercase tracking-widest"><Unlock size={14} /> Admin Active</div>
-                <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 py-2 bg-slate-700 hover:bg-red-600 text-white rounded-xl transition-all text-xs font-bold"><LogOut size={14} /> Logout</button>
+                <button 
+                  onClick={handleLogout} 
+                  aria-label="Logout of admin mode"
+                  className="w-full flex items-center justify-center gap-2 py-2 bg-slate-700 hover:bg-red-600 text-white rounded-xl transition-all text-xs font-bold focus:outline-none focus:ring-2 focus:ring-red-500"
+                >
+                  <LogOut size={14} /> Logout
+                </button>
               </div>
             ) : (
-              <button onClick={() => setIsLoginModalOpen(true)} className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-900/40"><LogIn size={14} /> Admin Login</button>
+              <button 
+                onClick={() => setIsLoginModalOpen(true)} 
+                aria-label="Open admin login"
+                className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-900/40 focus:outline-none focus:ring-2 focus:ring-white/50"
+              >
+                <LogIn size={14} /> Admin Login
+              </button>
             )}
           </div>
         </div>
@@ -883,12 +901,21 @@ export default function App() {
           { id: 'charter', label: 'Charter', icon: Scroll },
           { id: 'about', label: 'About', icon: Info },
         ].map((tab) => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex flex-col items-center gap-1 transition-colors ${activeTab === tab.id ? 'text-blue-600' : 'text-slate-400'}`}>
+          <button 
+            key={tab.id} 
+            onClick={() => setActiveTab(tab.id)} 
+            aria-label={`Maps to ${tab.label}`}
+            className={`flex flex-col items-center gap-1 p-1 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${activeTab === tab.id ? 'text-blue-600' : 'text-slate-400'}`}
+          >
             <tab.icon size={20} />
             <span className="text-[10px] font-black uppercase tracking-tighter">{tab.label}</span>
           </button>
         ))}
-        <button onClick={() => setIsDarkMode(!isDarkMode)} className={`flex flex-col items-center gap-1 transition-colors ${isDarkMode ? 'text-orange-400' : 'text-blue-600'}`}>
+        <button 
+          onClick={() => setIsDarkMode(!isDarkMode)} 
+          aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+          className={`flex flex-col items-center gap-1 p-1 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'text-orange-400' : 'text-blue-600'}`}
+        >
           {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
           <span className="text-[10px] font-black uppercase tracking-tighter">Theme</span>
         </button>
@@ -903,21 +930,27 @@ export default function App() {
             <p className="text-slate-500 font-semibold text-lg">Public accountability for Alamogordo.</p>
           </div>
           <div className="flex flex-wrap gap-3">
-            {isAdmin && activeTab === 'meetings' && (<button onClick={() => setIsAddingMeeting(true)} className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-black flex items-center gap-2 hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all text-sm"><Plus size={18} /> New Date</button>)}
-            {isAdmin && activeTab === 'commissioners' && (<button onClick={() => setIsAddingCommissioner(true)} className="bg-orange-500 text-white px-5 py-2.5 rounded-xl font-black flex items-center gap-2 hover:bg-orange-600 shadow-lg shadow-orange-500/20 transition-all text-sm"><Plus size={18} /> New Member</button>)}
-            <div className="md:hidden">{isAdmin ? (<button onClick={handleLogout} className="bg-slate-800 text-white px-4 py-2.5 rounded-xl font-black flex items-center gap-2 text-sm"><LogOut size={16} /> Logout</button>) : (<button onClick={() => setIsLoginModalOpen(true)} className="bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl font-black flex items-center gap-2 text-sm"><LogIn size={16} /> Admin Login</button>)}</div>
+            {isAdmin && activeTab === 'meetings' && (<button onClick={() => setIsAddingMeeting(true)} aria-label="Add new meeting date" className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-black flex items-center gap-2 hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"><Plus size={18} /> New Date</button>)}
+            {isAdmin && activeTab === 'commissioners' && (<button onClick={() => setIsAddingCommissioner(true)} aria-label="Add new commission member" className="bg-orange-500 text-white px-5 py-2.5 rounded-xl font-black flex items-center gap-2 hover:bg-orange-600 shadow-lg shadow-orange-500/20 transition-all text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"><Plus size={18} /> New Member</button>)}
+            <div className="md:hidden">
+              {isAdmin ? (
+                <button onClick={handleLogout} aria-label="Logout of admin mode" className="bg-slate-800 text-white px-4 py-2.5 rounded-xl font-black flex items-center gap-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500"><LogOut size={16} /> Logout</button>
+              ) : (
+                <button onClick={() => setIsLoginModalOpen(true)} aria-label="Open admin login" className="bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl font-black flex items-center gap-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"><LogIn size={16} /> Admin Login</button>
+              )}
+            </div>
           </div>
         </header>
 
         {activeTab === 'dashboard' && (
-          <div className="space-y-10 animate-in fade-in duration-700">
+          <div className="space-y-10 motion-safe:animate-in motion-safe:fade-in duration-700">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
               {[
-                { label: 'Meetings', value: dashboardStats.totalMeetings, icon: Calendar, color: 'text-blue-600', bg: isDarkMode ? 'bg-blue-900/20' : 'bg-blue-50' },
-                { label: 'Agenda Items', value: dashboardStats.totalItems, icon: FileText, color: 'text-orange-600', bg: isDarkMode ? 'bg-orange-900/20' : 'bg-orange-50' },
-                { label: 'Pass Rate', value: `${dashboardStats.passRate}%`, icon: TrendingUp, color: 'text-green-600', bg: isDarkMode ? 'bg-green-900/20' : 'bg-green-50' },
-                { label: 'Unanimous', value: `${dashboardStats.unanimity}%`, icon: Activity, color: 'text-purple-600', bg: isDarkMode ? 'bg-purple-900/20' : 'bg-purple-50' },
-                { label: 'Executive', value: dashboardStats.closedSessions, icon: Shield, color: 'text-red-600', bg: isDarkMode ? 'bg-red-900/20' : 'bg-red-50' }
+                { label: 'Meetings', value: dashboardStats.totalMeetings, icon: Calendar, color: isDarkMode ? 'text-blue-300' : 'text-blue-700', bg: isDarkMode ? 'bg-blue-900/40' : 'bg-blue-100' },
+                { label: 'Agenda Items', value: dashboardStats.totalItems, icon: FileText, color: isDarkMode ? 'text-orange-300' : 'text-orange-700', bg: isDarkMode ? 'bg-orange-900/40' : 'bg-orange-100' },
+                { label: 'Pass Rate', value: `${dashboardStats.passRate}%`, icon: TrendingUp, color: isDarkMode ? 'text-green-300' : 'text-green-700', bg: isDarkMode ? 'bg-green-900/40' : 'bg-green-100' },
+                { label: 'Unanimous', value: `${dashboardStats.unanimity}%`, icon: Activity, color: isDarkMode ? 'text-purple-300' : 'text-purple-700', bg: isDarkMode ? 'bg-purple-900/40' : 'bg-purple-100' },
+                { label: 'Executive', value: dashboardStats.closedSessions, icon: Shield, color: isDarkMode ? 'text-red-300' : 'text-red-700', bg: isDarkMode ? 'bg-red-900/40' : 'bg-red-100' }
               ].map((stat, i) => (
                 <div key={i} className={`p-6 rounded-[32px] border shadow-sm flex items-center gap-4 transition-colors ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-100'}`}>
                   <div className={`${stat.bg} ${stat.color} p-4 rounded-2xl`}><stat.icon size={24}/></div>
@@ -1014,7 +1047,7 @@ export default function App() {
         )}
 
         {activeTab === 'commissioners' && (
-          <div className="space-y-12 animate-in fade-in duration-500">
+          <div className="space-y-12 motion-safe:animate-in motion-safe:fade-in duration-500">
             <section>
               <div className="flex items-center gap-3 mb-8">
                 <ShieldCheck className="text-blue-600" size={24} />
@@ -1026,8 +1059,20 @@ export default function App() {
                     <div className={`absolute top-0 right-0 w-32 h-32 rounded-bl-[100px] -mr-10 -mt-10 transition-all ${isDarkMode ? 'bg-slate-800/50 group-hover:bg-slate-800' : 'bg-blue-50/50 group-hover:bg-blue-100/50'}`}></div>
                     {isAdmin && (
                       <div className="absolute top-6 right-6 flex gap-2 z-10">
-                        <button onClick={() => setEditingCommissioner(comm)} className="p-2 text-slate-300 hover:text-blue-500 transition-colors"><Edit2 size={18}/></button>
-                        <button onClick={() => { triggerConfirm("Remove Member", "Are you sure you want to remove this member?", () => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'commissioners', comm.id))) }} className="p-2 text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={18}/></button>
+                        <button 
+                          onClick={() => setEditingCommissioner(comm)} 
+                          aria-label={`Edit profile for ${comm.name}`}
+                          className="p-2 text-slate-300 hover:text-blue-500 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-xl"
+                        >
+                          <Edit2 size={18}/>
+                        </button>
+                        <button 
+                          onClick={() => { triggerConfirm("Remove Member", "Are you sure you want to remove this member?", () => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'commissioners', comm.id))) }} 
+                          aria-label={`Remove ${comm.name}`}
+                          className="p-2 text-slate-300 hover:text-red-500 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 rounded-xl"
+                        >
+                          <Trash2 size={18}/>
+                        </button>
                       </div>
                     )}
                     <div className="flex flex-col sm:flex-row items-center sm:items-start gap-8 relative z-0">
@@ -1044,11 +1089,11 @@ export default function App() {
 
                         {/* Contact Info Section */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                          <a href={`mailto:${comm.email}`} className={`flex items-center gap-2 p-2 rounded-xl border transition-all hover:scale-105 ${isDarkMode ? 'bg-slate-800/50 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-100 text-slate-600'}`}>
+                          <a href={`mailto:${comm.email}`} aria-label={`Email ${comm.name}`} className={`flex items-center gap-2 p-2 rounded-xl border transition-all motion-safe:hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-slate-800/50 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-100 text-slate-600'}`}>
                             <Mail size={14} className="text-blue-500 shrink-0" />
                             <span className="text-[10px] font-bold truncate">{comm.email || "No Email"}</span>
                           </a>
-                          <a href={`tel:${comm.phone}`} className={`flex items-center gap-2 p-2 rounded-xl border transition-all hover:scale-105 ${isDarkMode ? 'bg-slate-800/50 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-100 text-slate-600'}`}>
+                          <a href={`tel:${comm.phone}`} aria-label={`Call ${comm.name}`} className={`flex items-center gap-2 p-2 rounded-xl border transition-all motion-safe:hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-slate-800/50 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-100 text-slate-600'}`}>
                             <Phone size={14} className="text-orange-500 shrink-0" />
                             <span className="text-[10px] font-bold truncate">{comm.phone || "No Phone"}</span>
                           </a>
@@ -1091,7 +1136,13 @@ export default function App() {
                     <div key={comm.id} className={`p-6 rounded-[32px] border shadow-sm relative group opacity-75 hover:opacity-100 transition-all overflow-hidden ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-100'}`}>
                       {isAdmin && (
                         <div className="absolute top-4 right-4 flex gap-1 z-10">
-                          <button onClick={() => setEditingCommissioner(comm)} className="p-2 text-slate-200 hover:text-blue-500 transition-colors"><Edit2 size={14}/></button>
+                          <button 
+                            onClick={() => setEditingCommissioner(comm)} 
+                            aria-label={`Edit profile for ${comm.name}`}
+                            className="p-2 text-slate-200 hover:text-blue-500 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-xl"
+                          >
+                            <Edit2 size={14}/>
+                          </button>
                         </div>
                       )}
                       <div className="flex items-center gap-4 mb-4">
@@ -1120,14 +1171,19 @@ export default function App() {
         )}
 
         {activeTab === 'meetings' && (
-          <div className="space-y-8 animate-in fade-in duration-500">
+          <div className="space-y-8 motion-safe:animate-in motion-safe:fade-in duration-500">
             {meetings.map(meeting => {
               const isExpanded = expandedMeetings.includes(meeting.id);
               return (
                 <div key={meeting.id} className={`rounded-[44px] border transition-all duration-300 ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-100'} ${isExpanded ? (isDarkMode ? 'border-blue-900/40 shadow-2xl' : 'border-blue-100 shadow-xl') : 'shadow-sm hover:border-slate-400/20'}`}>
                   <div 
+                    role="button"
+                    tabIndex={0}
+                    aria-expanded={isExpanded}
+                    aria-label={isExpanded ? `Collapse meeting ${meeting.title}` : `Expand meeting ${meeting.title}`}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleMeetingCollapse(meeting.id); } }}
                     onClick={() => toggleMeetingCollapse(meeting.id)}
-                    className={`p-8 md:p-12 cursor-pointer flex flex-col md:flex-row items-start md:items-center justify-between gap-6 select-none ${isExpanded ? (isDarkMode ? 'bg-slate-800/20 rounded-t-[44px] border-b border-slate-800' : 'bg-slate-50/50 rounded-t-[44px] border-b border-slate-100') : 'rounded-[44px]'}`}
+                    className={`p-8 md:p-12 cursor-pointer flex flex-col md:flex-row items-start md:items-center justify-between gap-6 select-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset ${isExpanded ? (isDarkMode ? 'bg-slate-800/20 rounded-t-[44px] border-b border-slate-800' : 'bg-slate-50/50 rounded-t-[44px] border-b border-slate-100') : 'rounded-[44px]'}`}
                   >
                     <div className="flex items-center gap-6">
                       <div className={`p-5 rounded-3xl transition-colors ${isExpanded ? 'bg-blue-600 text-white' : (isDarkMode ? 'bg-slate-800 text-slate-600' : 'bg-slate-100 text-slate-400')}`}>
@@ -1138,17 +1194,17 @@ export default function App() {
                           <h3 className={`font-black text-3xl leading-none ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{meeting.title}</h3>
                           <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                             {meeting.youtubeUrl && (
-                              <a href={meeting.youtubeUrl} target="_blank" rel="noopener noreferrer" className="text-red-600 hover:text-red-700 transition-colors" title="Watch Meeting on YouTube">
+                              <a href={meeting.youtubeUrl} aria-label="Watch meeting on YouTube" target="_blank" rel="noopener noreferrer" className="text-red-600 hover:text-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 rounded-lg p-1" title="Watch Meeting on YouTube">
                                 <Youtube size={32} />
                               </a>
                             )}
                             {meeting.agendaUrl && (
-                              <a href={meeting.agendaUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-700 transition-colors" title="View Official Agenda">
+                              <a href={meeting.agendaUrl} aria-label="View official agenda PDF" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg p-1" title="View Official Agenda">
                                 <LinkIcon size={28} />
                               </a>
                             )}
                             {meeting.hasExecutiveSession && (
-                              <span className="text-red-600" title="Meeting Included Executive Session">
+                              <span className="text-red-600 p-1" title="Meeting Included Executive Session">
                                 <Shield size={28} />
                               </span>
                             )}
@@ -1165,19 +1221,25 @@ export default function App() {
                     <div className="flex items-center gap-4 ml-auto md:ml-0">
                       {isAdmin && (
                         <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                           <button onClick={() => setIsAddingItemToMeeting(meeting.id)} className="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-transform hover:scale-105"><Plus size={16}/> Add Item</button>
-                           <button onClick={() => setEditingMeeting(meeting)} className="p-2 text-slate-400 hover:text-blue-600"><Edit2 size={20}/></button>
-                           <button onClick={() => { triggerConfirm("Delete Meeting", "Are you sure you want to delete this meeting?", () => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meeting.id))) }} className="p-2 text-slate-400 hover:text-red-600"><Trash2 size={20}/></button>
+                           <button 
+                             onClick={() => setIsAddingItemToMeeting(meeting.id)} 
+                             aria-label="Add agenda item to meeting"
+                             className="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-transform motion-safe:hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                           >
+                             <Plus size={16}/> Add Item
+                           </button>
+                           <button onClick={() => setEditingMeeting(meeting)} aria-label="Edit meeting details" className="p-2 text-slate-400 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg"><Edit2 size={20}/></button>
+                           <button onClick={() => { triggerConfirm("Delete Meeting", "Are you sure you want to delete this meeting?", () => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meeting.id))) }} aria-label="Delete meeting" className="p-2 text-slate-400 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 rounded-lg"><Trash2 size={20}/></button>
                         </div>
                       )}
                       <div className="p-2 text-slate-300">
-                         {isExpanded ? <ChevronUp size={32} /> : <ChevronDown size={32} />}
+                         {isExpanded ? <ChevronUp size={32} aria-hidden="true" /> : <ChevronDown size={32} aria-hidden="true" />}
                       </div>
                     </div>
                   </div>
 
                   {isExpanded && (
-                    <div className="animate-in slide-in-from-top-2 duration-300">
+                    <div className="motion-safe:animate-in slide-in-from-top-2 duration-300">
                       {meeting.items?.length === 0 ? (
                         <div className="p-14 text-center text-slate-400 italic font-medium">No agenda items logged for this session.</div>
                       ) : (
@@ -1190,25 +1252,25 @@ export default function App() {
                             <div key={item.id} className={`p-6 md:p-14 border-b last:border-0 relative ${isDarkMode ? 'border-slate-800' : 'border-slate-100'}`}>
                               {isAdmin && (
                                 <div className="absolute top-6 md:top-10 right-6 md:right-10 flex gap-2">
-                                   <button onClick={() => setEditingItem({ meetingId: meeting.id, itemIndex: idx, itemData: item })} className="p-2 text-slate-300 hover:text-blue-500"><Edit2 size={16}/></button>
-                                   <button onClick={() => { triggerConfirm("Delete Item", "Are you sure you want to delete this item?", () => { const updated = meeting.items.filter((_, i) => i !== idx); updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meeting.id), { items: updated }); }) }} className="p-2 text-slate-300 hover:text-red-500"><Trash2 size={16}/></button>
+                                   <button onClick={() => setEditingItem({ meetingId: meeting.id, itemIndex: idx, itemData: item })} aria-label="Edit agenda item" className="p-2 text-slate-300 hover:text-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg"><Edit2 size={16}/></button>
+                                   <button onClick={() => { triggerConfirm("Delete Item", "Are you sure you want to delete this item?", () => { const updated = meeting.items.filter((_, i) => i !== idx); updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'meetings', meeting.id), { items: updated }); }) }} aria-label="Delete agenda item" className="p-2 text-slate-300 hover:text-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 rounded-lg"><Trash2 size={16}/></button>
                                 </div>
                               )}
                               <div className="flex flex-col lg:flex-row justify-between items-start mb-12 gap-10">
                                 <div className="max-w-4xl">
                                   <div className="flex items-center gap-3 mb-5 flex-wrap">
-                                    <span className={`text-[11px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full inline-block ${isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-700'}`}>{item.category}</span>
+                                    <span className={`text-[11px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full inline-block ${isDarkMode ? 'bg-blue-900/30 text-blue-300' : 'bg-blue-100 text-blue-800'}`}>{item.category}</span>
                                     
                                     {item.isConsentAgenda && !item.isRemovedFromConsent && (
-                                      <span className={`text-[11px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full inline-block ${isDarkMode ? 'bg-purple-900/30 text-purple-400' : 'bg-purple-100 text-purple-700'}`}>Consent Agenda</span>
+                                      <span className={`text-[11px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full inline-block ${isDarkMode ? 'bg-purple-900/30 text-purple-300' : 'bg-purple-100 text-purple-800'}`}>Consent Agenda</span>
                                     )}
 
                                     {item.isRemovedFromConsent && (
-                                      <span className={`text-[11px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full inline-block ${isDarkMode ? 'bg-amber-900/30 text-amber-400' : 'bg-amber-100 text-amber-700'}`}>Pulled from Consent</span>
+                                      <span className={`text-[11px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full inline-block ${isDarkMode ? 'bg-amber-900/30 text-amber-300' : 'bg-amber-100 text-amber-800'}`}>Pulled from Consent</span>
                                     )}
 
                                     {item.timestampUrl && (
-                                      <a href={item.timestampUrl} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full transition-transform hover:scale-105 ${isDarkMode ? 'bg-red-900/30 text-red-400' : 'bg-red-100 text-red-700'}`}>
+                                      <a href={item.timestampUrl} aria-label="Watch agenda item segment on YouTube" target="_blank" rel="noopener noreferrer" className={`flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full transition-transform motion-safe:hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 ${isDarkMode ? 'bg-red-900/30 text-red-300' : 'bg-red-100 text-red-800'}`}>
                                         <Youtube size={14} /> Watch Segment
                                       </a>
                                     )}
@@ -1217,11 +1279,11 @@ export default function App() {
                                   <p className={`text-base md:text-lg leading-relaxed font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{item.description}</p>
                                 </div>
                                 <div className={`min-w-[150px] w-full md:w-auto px-8 py-4 rounded-[24px] text-xs font-black uppercase tracking-[0.2em] text-center flex items-center justify-center gap-2 ${
-                                  item.status === 'Passed' ? (isDarkMode ? 'bg-green-900/20 text-green-500' : 'bg-green-100 text-green-700') : 
-                                  item.status === 'Failed' ? (isDarkMode ? 'bg-red-900/20 text-red-500' : 'bg-red-100 text-red-700') : 
-                                  item.status === 'Upcoming' ? (isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-slate-200 text-slate-700') :
-                                  item.status === 'N/A (No Vote Required)' ? (isDarkMode ? 'bg-slate-800/40 text-slate-600' : 'bg-slate-100 text-slate-500') :
-                                  (isDarkMode ? 'bg-amber-900/20 text-amber-500' : 'bg-amber-100 text-amber-700')
+                                  item.status === 'Passed' ? (isDarkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-800') : 
+                                  item.status === 'Failed' ? (isDarkMode ? 'bg-red-900/30 text-red-400' : 'bg-red-100 text-red-800') : 
+                                  item.status === 'Upcoming' ? (isDarkMode ? 'bg-slate-800 text-slate-300' : 'bg-slate-200 text-slate-800') :
+                                  item.status === 'N/A (No Vote Required)' ? (isDarkMode ? 'bg-slate-800/40 text-slate-400' : 'bg-slate-100 text-slate-700') :
+                                  (isDarkMode ? 'bg-amber-900/30 text-amber-400' : 'bg-amber-100 text-amber-800')
                                 }`}>
                                   {item.status === 'Upcoming' && <Clock size={14} />}
                                   {item.status === 'N/A (No Vote Required)' && <CircleSlash size={14} />}
@@ -1230,11 +1292,11 @@ export default function App() {
                               </div>
                               
                               {item.status === 'Upcoming' ? (
-                                <div className={`p-8 rounded-[40px] border border-dashed text-center ${isDarkMode ? 'bg-slate-950/50 border-slate-800 text-blue-400/80' : 'bg-blue-50/50 border-blue-200 text-blue-600'}`}>
+                                <div className={`p-8 rounded-[40px] border border-dashed text-center ${isDarkMode ? 'bg-slate-950/50 border-slate-800 text-blue-400/80' : 'bg-blue-50/50 border-blue-200 text-blue-800'}`}>
                                   <p className="font-bold text-sm">Meeting Pending. Voting records will be updated once the session concludes.</p>
                                 </div>
                               ) : isNoVoteItem ? (
-                                <div className={`p-8 rounded-[40px] border border-dashed text-center flex flex-col items-center ${isDarkMode ? 'bg-slate-950/50 border-slate-800 text-slate-500' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
+                                <div className={`p-8 rounded-[40px] border border-dashed text-center flex flex-col items-center ${isDarkMode ? 'bg-slate-950/50 border-slate-800 text-slate-500' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
                                    <Info size={24} className="text-slate-500 mb-3" />
                                    <p className="font-bold text-sm">Discussion or Procedural Item. No voting action was required for this agenda entry.</p>
                                 </div>
@@ -1244,22 +1306,28 @@ export default function App() {
                                     const vote = item.votes[comm.id] || "Abstain";
                                     return (
                                       <div key={comm.id} className="text-center group/voter">
-                                        <img src={comm.image} className={`w-12 h-12 md:w-16 md:h-16 rounded-[16px] md:rounded-[20px] mx-auto object-cover border-4 shadow-xl mb-3 transition-all group-hover/voter:scale-110 ${isDarkMode ? 'border-slate-800 shadow-slate-950/40' : 'border-white shadow-slate-200'}`} alt="" />
+                                        <img src={comm.image} className={`w-12 h-12 md:w-16 md:h-16 rounded-[16px] md:rounded-[20px] mx-auto object-cover border-4 shadow-xl mb-3 transition-all motion-safe:group-hover/voter:scale-110 ${isDarkMode ? 'border-slate-800 shadow-slate-950/40' : 'border-white shadow-slate-200'}`} alt="" />
                                         <p className={`text-[10px] md:text-xs font-black truncate px-2 mb-3 ${isDarkMode ? 'text-slate-400' : 'text-slate-700'}`}>{comm.name.split(' ').pop()}</p>
                                         {isAdmin ? (
-                                          <button onClick={() => updateVote(meeting.id, idx, comm.id, vote)} className={`text-[10px] font-black px-4 py-1.5 rounded-xl text-white shadow-md active:scale-90 w-full transition-colors ${
-                                            vote === 'Yes' ? 'bg-green-600' : 
-                                            vote === 'No' ? 'bg-red-600' : 
-                                            vote === 'Absent' ? 'bg-purple-600' : 
-                                            vote === 'Recused' ? 'bg-orange-600' :
-                                            'bg-slate-400'
-                                          }`}>{vote}</button>
+                                          <button 
+                                            onClick={() => updateVote(meeting.id, idx, comm.id, vote)} 
+                                            aria-label={`Change vote for ${comm.name}. Current vote is ${vote}`}
+                                            className={`text-[10px] font-black px-4 py-1.5 rounded-xl text-white shadow-md motion-safe:active:scale-90 w-full transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 ${
+                                              vote === 'Yes' ? 'bg-green-600 hover:bg-green-700' : 
+                                              vote === 'No' ? 'bg-red-600 hover:bg-red-700' : 
+                                              vote === 'Absent' ? 'bg-purple-600 hover:bg-purple-700' : 
+                                              vote === 'Recused' ? 'bg-orange-600 hover:bg-orange-700' :
+                                              'bg-slate-400 hover:bg-slate-500'
+                                            }`}
+                                          >
+                                            {vote}
+                                          </button>
                                         ) : (
                                           <div className={`text-[10px] font-black flex items-center justify-center gap-1 transition-colors ${
-                                            vote === 'Yes' ? 'text-green-500' : 
-                                            vote === 'No' ? 'text-red-500' : 
-                                            vote === 'Absent' ? 'text-purple-500' : 
-                                            vote === 'Recused' ? 'text-orange-500' :
+                                            vote === 'Yes' ? 'text-green-600 dark:text-green-400' : 
+                                            vote === 'No' ? 'text-red-600 dark:text-red-400' : 
+                                            vote === 'Absent' ? 'text-purple-600 dark:text-purple-400' : 
+                                            vote === 'Recused' ? 'text-orange-600 dark:text-orange-400' :
                                             'text-slate-500 italic'
                                           }`}>
                                             {vote === 'Yes' ? <CheckCircle size={12}/> : 
@@ -1288,15 +1356,15 @@ export default function App() {
         )}
 
         {activeTab === 'charter' && (
-          <div className="space-y-10 animate-in fade-in duration-500">
+          <div className="space-y-10 motion-safe:animate-in motion-safe:fade-in duration-500">
             {/* System Notification Banner */}
             {charterMessage && (
-              <div className="p-4 bg-blue-600/10 border border-blue-500/20 text-blue-500 dark:text-blue-400 rounded-3xl flex items-center justify-between shadow-sm">
+              <div className="p-4 bg-blue-100 dark:bg-blue-900/30 border border-blue-500/20 text-blue-800 dark:text-blue-300 rounded-3xl flex items-center justify-between shadow-sm">
                 <div className="flex items-center gap-2">
                   <Info size={18} />
                   <span className="font-bold text-sm">{charterMessage}</span>
                 </div>
-                <button onClick={() => setCharterMessage("")} className="hover:text-blue-600 dark:hover:text-blue-200"><X size={18} /></button>
+                <button onClick={() => setCharterMessage("")} aria-label="Dismiss notification" className="hover:text-blue-600 dark:hover:text-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg"><X size={18} /></button>
               </div>
             )}
 
@@ -1318,7 +1386,8 @@ export default function App() {
                       <div className="absolute top-4 right-4 flex gap-1 z-10 opacity-0 group-hover/card:opacity-100 transition-opacity">
                         <button 
                           onClick={() => setEditingQuickLink(topic)}
-                          className="p-1.5 text-slate-400 hover:text-blue-500 transition-colors"
+                          aria-label={`Edit quick link ${topic.title}`}
+                          className="p-1.5 text-slate-400 hover:text-blue-500 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg"
                         >
                           <Edit2 size={12} />
                         </button>
@@ -1329,7 +1398,8 @@ export default function App() {
                               setCharterMessage(`Deleted "${topic.title}" jump link`);
                             });
                           }}
-                          className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"
+                          aria-label={`Delete quick link ${topic.title}`}
+                          className="p-1.5 text-slate-400 hover:text-red-500 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 rounded-lg"
                         >
                           <Trash2 size={12} />
                         </button>
@@ -1338,13 +1408,14 @@ export default function App() {
 
                     <button 
                       onClick={() => setActiveCharterArticle(topic.articleId)}
-                      className="w-full text-left"
+                      aria-label={`Read article about ${topic.title}`}
+                      className="w-full text-left focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-xl"
                     >
                       <div className={`${colors.bg} ${colors.color} p-4 rounded-2xl w-fit mb-4`}>
                         <IconComponent size={24} />
                       </div>
                       <h4 className={`font-black text-lg mb-2 leading-snug ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{topic.title}</h4>
-                      <p className="text-xs text-slate-500 font-semibold leading-relaxed">{topic.desc}</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold leading-relaxed">{topic.desc}</p>
                     </button>
                   </div>
                 );
@@ -1353,7 +1424,8 @@ export default function App() {
               {isAdmin && (
                 <button 
                   onClick={() => setIsAddingQuickLink(true)}
-                  className="p-6 rounded-[32px] border-2 border-dashed border-slate-300 dark:border-slate-800 flex flex-col items-center justify-center text-center gap-2 text-slate-400 hover:text-blue-500 hover:border-blue-500 transition-all duration-300"
+                  aria-label="Add new topic jump link"
+                  className="p-6 rounded-[32px] border-2 border-dashed border-slate-300 dark:border-slate-800 flex flex-col items-center justify-center text-center gap-2 text-slate-400 hover:text-blue-500 hover:border-blue-500 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <Plus size={32} />
                   <span className="font-bold text-sm">Add Jump Link</span>
@@ -1366,11 +1438,12 @@ export default function App() {
               {/* Left panel: List of articles */}
               <div className="w-full lg:w-1/3 space-y-3">
                 <div className={`p-4 rounded-[28px] border mb-4 flex items-center justify-between ${isDarkMode ? 'bg-slate-900/50 border-slate-800' : 'bg-slate-100/50 border-slate-200'}`}>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2">Table of Articles</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 px-2">Table of Articles</p>
                   {isAdmin && (
                     <button 
                       onClick={handleInitializeDefaultCharter}
-                      className="text-[9px] font-black uppercase tracking-widest text-orange-500 hover:text-orange-600 px-2 py-1 bg-orange-500/10 rounded-lg"
+                      aria-label="Load or reset default Alamogordo Charter data"
+                      className="text-[9px] font-black uppercase tracking-widest text-orange-600 dark:text-orange-400 hover:bg-orange-500/20 px-2 py-1 bg-orange-500/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                       title="Load/Reset default Alamogordo Charter data"
                     >
                       Reset Defaults
@@ -1384,8 +1457,12 @@ export default function App() {
                     return (
                       <div
                         key={art.id}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`View details for Article ${art.num}: ${art.title}`}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setActiveCharterArticle(art.id); } }}
                         onClick={() => setActiveCharterArticle(art.id)}
-                        className={`w-full flex items-center justify-between p-4 rounded-2xl border text-left cursor-pointer transition-all group/artrow ${
+                        className={`w-full flex items-center justify-between p-4 rounded-2xl border text-left cursor-pointer transition-all group/artrow focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                           isActive 
                             ? (isDarkMode ? 'bg-blue-600 border-blue-500 text-white shadow-lg' : 'bg-blue-600 border-blue-500 text-white shadow-xl shadow-blue-600/20')
                             : (isDarkMode ? 'bg-slate-950 border-slate-800 text-slate-400 hover:bg-slate-900 hover:text-white' : 'bg-white border-slate-100 text-slate-600 hover:bg-slate-50 hover:text-slate-900')
@@ -1404,7 +1481,8 @@ export default function App() {
                             <button 
                               onClick={() => moveArticle(art.id, 'up')}
                               disabled={idx === 0}
-                              className={`p-1 hover:text-blue-300 ${isActive ? 'text-white' : 'text-slate-400'} ${idx === 0 ? 'opacity-30 cursor-not-allowed' : ''}`}
+                              aria-label={`Move Article ${art.num} up`}
+                              className={`p-1 hover:text-blue-300 focus:outline-none focus:ring-2 focus:ring-white/50 rounded-md ${isActive ? 'text-white' : 'text-slate-400'} ${idx === 0 ? 'opacity-30 cursor-not-allowed' : ''}`}
                               title="Move Article Up"
                             >
                               <ChevronUp size={16} />
@@ -1412,7 +1490,8 @@ export default function App() {
                             <button 
                               onClick={() => moveArticle(art.id, 'down')}
                               disabled={idx === displayArticles.length - 1}
-                              className={`p-1 hover:text-blue-300 ${isActive ? 'text-white' : 'text-slate-400'} ${idx === displayArticles.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}`}
+                              aria-label={`Move Article ${art.num} down`}
+                              className={`p-1 hover:text-blue-300 focus:outline-none focus:ring-2 focus:ring-white/50 rounded-md ${isActive ? 'text-white' : 'text-slate-400'} ${idx === displayArticles.length - 1 ? 'opacity-30 cursor-not-allowed' : ''}`}
                               title="Move Article Down"
                             >
                               <ChevronDown size={16} />
@@ -1423,7 +1502,8 @@ export default function App() {
                                 setEditingCharterArticle(art);
                                 setModalSections(art.sections?.map(s => ({ ...s, subsections: s.subsections || [] })) || [{ title: '', text: '', subsections: [] }]);
                               }}
-                              className={`p-1 hover:text-orange-400 ${isActive ? 'text-white' : 'text-slate-400'}`}
+                              aria-label={`Edit Article ${art.num}`}
+                              className={`p-1 hover:text-orange-400 focus:outline-none focus:ring-2 focus:ring-white/50 rounded-md ${isActive ? 'text-white' : 'text-slate-400'}`}
                             >
                               <Edit2 size={12} />
                             </button>
@@ -1434,7 +1514,8 @@ export default function App() {
                                   setCharterMessage(`Deleted Article ${art.num}`);
                                 });
                               }}
-                              className={`p-1 hover:text-red-400 ${isActive ? 'text-white' : 'text-slate-400'}`}
+                              aria-label={`Delete Article ${art.num}`}
+                              className={`p-1 hover:text-red-400 focus:outline-none focus:ring-2 focus:ring-white/50 rounded-md ${isActive ? 'text-white' : 'text-slate-400'}`}
                             >
                               <Trash2 size={12} />
                             </button>
@@ -1450,7 +1531,8 @@ export default function App() {
                         setIsAddingCharterArticle(true);
                         setModalSections([{ title: '', text: '', subsections: [] }]);
                       }}
-                      className="w-full py-4 bg-blue-600/10 hover:bg-blue-600/20 text-blue-500 font-bold rounded-2xl flex items-center justify-center gap-2 text-sm border-2 border-dashed border-blue-500/20 transition-all"
+                      aria-label="Add a new charter article"
+                      className="w-full py-4 bg-blue-600/10 hover:bg-blue-600/20 text-blue-700 dark:text-blue-400 font-bold rounded-2xl flex items-center justify-center gap-2 text-sm border-2 border-dashed border-blue-500/20 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <Plus size={16} /> New Article
                     </button>
@@ -1473,18 +1555,18 @@ export default function App() {
                     <div className={`p-8 md:p-12 rounded-[44px] border shadow-sm transition-colors ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-100'}`}>
                       {/* Article Title */}
                       <div className="flex items-center gap-4 mb-8">
-                        <span className={`font-black text-2xl px-5 py-2.5 rounded-2xl ${isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-50 text-blue-600'}`}>
+                        <span className={`font-black text-2xl px-5 py-2.5 rounded-2xl ${isDarkMode ? 'bg-blue-900/30 text-blue-300' : 'bg-blue-100 text-blue-800'}`}>
                           Article {art.num}
                         </span>
                         <h3 className={`text-3xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{art.title}</h3>
                       </div>
 
                       {/* Plain English Summary Box */}
-                      <div className={`p-6 rounded-3xl border mb-10 flex items-start gap-4 ${isDarkMode ? 'bg-slate-900/40 border-slate-800' : 'bg-blue-50/50 border-blue-100/50'}`}>
-                        <Info className="text-blue-500 shrink-0 mt-0.5" size={24} />
+                      <div className={`p-6 rounded-3xl border mb-10 flex items-start gap-4 ${isDarkMode ? 'bg-slate-900/40 border-slate-800' : 'bg-blue-50/50 border-blue-200'}`}>
+                        <Info className="text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" size={24} />
                         <div>
-                          <h4 className="text-[11px] font-black uppercase tracking-widest text-blue-500 mb-2">Plain English Summary</h4>
-                          <p className={`text-sm font-semibold leading-relaxed ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                          <h4 className="text-[11px] font-black uppercase tracking-widest text-blue-700 dark:text-blue-400 mb-2">Plain English Summary</h4>
+                          <p className={`text-sm font-semibold leading-relaxed ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
                             {art.summary}
                           </p>
                         </div>
@@ -1492,13 +1574,13 @@ export default function App() {
 
                       {/* Section Details */}
                       <div className="space-y-8">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-4 mb-6">Charter Provisions</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 border-b pb-4 mb-6">Charter Provisions</p>
                         {art.sections?.map((sec, idx) => (
                           <div key={idx} className={`p-6 rounded-3xl border transition-colors ${isDarkMode ? 'bg-slate-950/50 border-slate-800/60 hover:border-slate-800' : 'bg-slate-50/50 border-slate-100 hover:border-slate-200/60'}`}>
                             <h4 className={`font-black text-lg mb-3 ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>{sec.title}</h4>
                             
                             {sec.text && (
-                              <p className={`text-sm leading-relaxed font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                              <p className={`text-sm leading-relaxed font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                                 {sec.text}
                               </p>
                             )}
@@ -1507,8 +1589,8 @@ export default function App() {
                               <div className="mt-4 space-y-3 pl-2">
                                 {sec.subsections.map((sub, subIdx) => (
                                   <div key={subIdx} className="flex items-start gap-3">
-                                    <span className="font-bold text-blue-500 shrink-0 mt-0.5 w-5">{String.fromCharCode(65 + subIdx)}.</span>
-                                    <span className={`text-sm leading-relaxed font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                                    <span className="font-bold text-blue-600 dark:text-blue-400 shrink-0 mt-0.5 w-5">{String.fromCharCode(65 + subIdx)}.</span>
+                                    <span className={`text-sm leading-relaxed font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                                       {sub}
                                     </span>
                                   </div>
@@ -1530,10 +1612,10 @@ export default function App() {
         )}
 
         {activeTab === 'about' && (
-          <div className="max-w-4xl space-y-10 animate-in fade-in duration-500">
+          <div className="max-w-4xl space-y-10 motion-safe:animate-in motion-safe:fade-in duration-500">
             {/* WIP Section */}
             <div className={`p-10 rounded-[44px] shadow-xl relative overflow-hidden group transition-colors ${isDarkMode ? 'bg-slate-900 text-white' : 'bg-slate-900 text-white'}`}>
-              <div className="absolute top-0 right-0 p-8 text-slate-800 transition-transform group-hover:scale-110"><Construction size={120} /></div>
+              <div className="absolute top-0 right-0 p-8 text-slate-800 transition-transform motion-safe:group-hover:scale-110"><Construction size={120} /></div>
               <div className="relative z-10">
                 <h3 className="text-2xl font-black mb-6 flex items-center gap-3 text-orange-400"><Construction /> Work in Progress</h3>
                 <div className="space-y-4 text-slate-300 text-lg leading-relaxed font-medium">
@@ -1551,7 +1633,7 @@ export default function App() {
             <div className={`p-10 rounded-[44px] border shadow-sm relative overflow-hidden transition-colors ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-white border-orange-100'}`}>
               <div className={`absolute top-0 right-0 p-8 transition-colors ${isDarkMode ? 'text-slate-800' : 'text-orange-50'}`}><ShieldAlert size={120} /></div>
               <div className="relative z-10">
-                <h3 className="text-2xl font-black mb-6 flex items-center gap-3 text-orange-500"><ShieldAlert /> Content Disclaimer</h3>
+                <h3 className="text-2xl font-black mb-6 flex items-center gap-3 text-orange-600 dark:text-orange-500"><ShieldAlert /> Content Disclaimer</h3>
                 <div className={`space-y-4 text-lg leading-relaxed font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                   <p>
                     CivicWatch is a <span className={`font-bold italic underline decoration-orange-300 text-decoration-thickness-2 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>personal passion project</span> created and maintained by Sven Sears. 
@@ -1568,13 +1650,13 @@ export default function App() {
 
             {/* Methodology & Curation Section */}
             <div className={`p-10 rounded-[44px] border shadow-sm transition-colors ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-white border-blue-50'}`}>
-              <h3 className={`text-2xl font-black mb-6 flex items-center gap-3 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}><FileText className="text-blue-500" /> Curation & Methodology</h3>
+              <h3 className={`text-2xl font-black mb-6 flex items-center gap-3 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}><FileText className="text-blue-600 dark:text-blue-400" /> Curation & Methodology</h3>
               <div className={`space-y-4 text-lg leading-relaxed font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                 <p>
                   The goal of this tracker is to focus on high impact decisions regarding city policy, financial contracts, and community infrastructure. 
                 </p>
                 <p>
-                  To keep the Insight Hub focused on substantive data, <span className={`font-bold ${isDarkMode ? 'text-white' : 'text-slate-950'}`}>purely procedural items</span> (such as the approval of meeting minutes, invocation, or adjournment) are generally excluded from this tracker. 
+                  To keep the Insight Hub focused on substantive data, <span className={`font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>purely procedural items</span> (such as the approval of meeting minutes, invocation, or adjournment) are generally excluded from this tracker. 
                 </p>
               </div>
             </div>
@@ -1584,11 +1666,11 @@ export default function App() {
                <div className={`p-10 rounded-[44px] border shadow-sm relative overflow-hidden group transition-colors ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-100'}`}>
                   <div className={`absolute -bottom-6 -right-6 transition-colors ${isDarkMode ? 'text-slate-800' : 'text-slate-50'}`}><Github size={140} /></div>
                   <div className="relative z-10">
-                    <h3 className={`text-2xl font-black mb-4 flex items-center gap-3 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}><Code className="text-blue-500" /> Open Source</h3>
+                    <h3 className={`text-2xl font-black mb-4 flex items-center gap-3 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}><Code className="text-blue-600 dark:text-blue-400" /> Open Source</h3>
                     <p className={`mb-8 font-medium ${isDarkMode ? 'text-slate-500' : 'text-slate-500'}`}>
                       CivicWatch is built in support of a free internet. The code is available for any resident in any city to use for their own community.
                     </p>
-                    <a href="https://github.com/Anarchyhehe/coa-tracker" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-black transition-all shadow-lg shadow-blue-900/40">
+                    <a href="https://github.com/Anarchyhehe/coa-tracker" aria-label="Visit project GitHub repository" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-black transition-all shadow-lg shadow-blue-900/40 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
                       <Github size={20} /> Report via GitHub
                     </a>
                   </div>
@@ -1596,13 +1678,13 @@ export default function App() {
 
                <div className={`p-10 rounded-[44px] border shadow-sm flex flex-col justify-between transition-colors ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-100'}`}>
                   <div>
-                    <h3 className={`text-2xl font-black mb-4 flex items-center gap-3 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}><MessagesSquare className="text-orange-500" /> Get in Touch</h3>
+                    <h3 className={`text-2xl font-black mb-4 flex items-center gap-3 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}><MessagesSquare className="text-orange-600 dark:text-orange-400" /> Get in Touch</h3>
                     <p className={`font-medium mb-6 ${isDarkMode ? 'text-slate-500' : 'text-slate-500'}`}>
                       For questions regarding data accuracy, suggestions for new categories, or collaboration requests.
                     </p>
                   </div>
-                  <a href="mailto:alamogordocivicwatch@gmail.com" className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-3xl font-black transition-all ${isDarkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-900 hover:bg-slate-200'}`}>
-                    <Mail size={20} /> alamogordocivicwatch@gmail.com
+                  <a href="mailto:alamogordocivicwatch@gmail.com" aria-label="Send email to alamogordocivicwatch@gmail.com" className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-3xl font-black transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-900 hover:bg-slate-200'}`}>
+                    <Mail size={20} /> Send Message
                   </a>
                </div>
             </div>
@@ -1613,9 +1695,9 @@ export default function App() {
 
         {/* Modal: Custom Confirmation Dialog */}
         {confirmModal.isOpen && (
-          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[300] flex items-center justify-center p-6 animate-in fade-in duration-300">
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[300] flex items-center justify-center p-6 motion-safe:animate-in motion-safe:fade-in duration-300">
             <div className={`rounded-[32px] w-full max-w-md p-8 shadow-2xl border transition-colors ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-100'}`}>
-              <div className="flex items-center gap-3 text-red-500 mb-4">
+              <div className="flex items-center gap-3 text-red-600 dark:text-red-500 mb-4">
                 <AlertCircle size={28} />
                 <h3 className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{confirmModal.title}</h3>
               </div>
@@ -1623,13 +1705,15 @@ export default function App() {
               <div className="flex gap-4 justify-end">
                 <button 
                   onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
-                  className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest ${isDarkMode ? 'bg-slate-900 hover:bg-slate-800 text-slate-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
+                  aria-label="Cancel action"
+                  className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-slate-400 ${isDarkMode ? 'bg-slate-900 hover:bg-slate-800 text-slate-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
                 >
                   Cancel
                 </button>
                 <button 
                   onClick={confirmModal.onConfirm}
-                  className="px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/20"
+                  aria-label="Confirm action"
+                  className="px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/20 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                 >
                   Confirm
                 </button>
@@ -1640,48 +1724,49 @@ export default function App() {
 
         {/* Modal: Add/Edit Charter Article */}
         {(isAddingCharterArticle || editingCharterArticle) && (
-          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[120] flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[120] flex items-center justify-center p-4 md:p-8 motion-safe:animate-in motion-safe:fade-in duration-300">
             <div className={`rounded-[32px] md:rounded-[56px] w-full max-w-3xl p-6 md:p-12 shadow-2xl max-h-[90vh] overflow-y-auto transition-colors ${isDarkMode ? 'bg-slate-950' : 'bg-white'}`}>
               <div className="flex justify-between items-center mb-10">
                 <h3 className={`text-2xl md:text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
                   {editingCharterArticle ? `Modify Article ${editingCharterArticle.num}` : "Create Charter Article"}
                 </h3>
-                <button onClick={() => {setIsAddingCharterArticle(false); setEditingCharterArticle(null);}} className="text-slate-300 hover:text-slate-600 transition-colors"><X size={32}/></button>
+                <button onClick={() => {setIsAddingCharterArticle(false); setEditingCharterArticle(null);}} aria-label="Close modal" className="text-slate-400 hover:text-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 rounded-lg"><X size={32}/></button>
               </div>
               
               <form onSubmit={handleCharterArticleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                    <div className="space-y-2">
-                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Roman Numeral</label>
-                     <input name="num" placeholder="e.g. I, II, III" required defaultValue={editingCharterArticle?.num} className={`w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} />
+                     <label htmlFor="numInput" className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Roman Numeral</label>
+                     <input id="numInput" name="num" placeholder="e.g. I, II, III" required defaultValue={editingCharterArticle?.num} className={`w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`} />
                    </div>
                    <div className="col-span-2 space-y-2">
-                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Article Title</label>
-                     <input name="title" placeholder="e.g. Powers of the City" required defaultValue={editingCharterArticle?.title} className={`w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} />
+                     <label htmlFor="titleInput" className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Article Title</label>
+                     <input id="titleInput" name="title" placeholder="e.g. Powers of the City" required defaultValue={editingCharterArticle?.title} className={`w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`} />
                    </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Plain English Summary</label>
-                  <textarea name="summary" placeholder="Provide a summary translation..." rows="3" required defaultValue={editingCharterArticle?.summary} className={`w-full p-4 border-2 rounded-3xl font-semibold outline-none transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`}></textarea>
+                  <label htmlFor="summaryInput" className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Plain English Summary</label>
+                  <textarea id="summaryInput" name="summary" placeholder="Provide a summary translation..." rows="3" required defaultValue={editingCharterArticle?.summary} className={`w-full p-4 border-2 rounded-3xl font-semibold outline-none transition-all focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`}></textarea>
                 </div>
 
                 {/* Sections Array Editor */}
                 <div className="space-y-4">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Charter Sections / Provisions</label>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Charter Sections / Provisions</label>
                   <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                     {modalSections.map((sec, idx) => (
-                      <div key={idx} className={`p-6 rounded-[28px] border-2 relative space-y-4 ${isDarkMode ? 'bg-slate-900 border-slate-800/80' : 'bg-slate-50 border-slate-100'}`}>
+                      <div key={idx} className={`p-6 rounded-[28px] border-2 relative space-y-4 ${isDarkMode ? 'bg-slate-900 border-slate-800/80' : 'bg-slate-50 border-slate-200'}`}>
                         <button 
                           type="button" 
                           onClick={() => setModalSections(modalSections.filter((_, i) => i !== idx))}
-                          className="absolute top-5 right-5 text-slate-400 hover:text-red-500 transition-colors"
+                          aria-label="Remove section"
+                          className="absolute top-5 right-5 text-slate-400 hover:text-red-500 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 rounded-lg"
                         >
                           <X size={16} />
                         </button>
                         
                         <div className="space-y-1.5 pr-8">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Section Heading</label>
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Section Heading</label>
                           <input 
                             placeholder={`e.g. Section ${idx + 1}.01 - Subject Name`}
                             value={sec.title}
@@ -1691,12 +1776,13 @@ export default function App() {
                               setModalSections(next);
                             }}
                             required
-                            className={`w-full p-3 border rounded-xl font-bold text-sm outline-none focus:border-blue-500 ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-100'}`}
+                            aria-label={`Title for section ${idx + 1}`}
+                            className={`w-full p-3 border-2 rounded-xl font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-100'}`}
                           />
                         </div>
                         
                         <div className="space-y-1.5">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Base Provision Text</label>
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Base Provision Text</label>
                           <textarea 
                             placeholder="Opening paragraph of the section..."
                             value={sec.text}
@@ -1706,13 +1792,14 @@ export default function App() {
                               setModalSections(next);
                             }}
                             rows="2"
-                            className={`w-full p-3 border rounded-xl font-medium text-sm outline-none focus:border-blue-500 ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-100'}`}
+                            aria-label={`Content for section ${idx + 1}`}
+                            className={`w-full p-3 border-2 rounded-xl font-medium text-sm outline-none focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-100'}`}
                           />
                         </div>
 
                         {/* Nested Subsections Editor */}
                         <div className={`p-4 rounded-2xl space-y-3 ${isDarkMode ? 'bg-slate-950/50' : 'bg-white/50'}`}>
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex justify-between items-center">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex justify-between items-center">
                             <span>Subsections (A, B, C...)</span>
                             <button 
                               type="button" 
@@ -1722,7 +1809,8 @@ export default function App() {
                                 next[idx].subsections.push('');
                                 setModalSections(next);
                               }}
-                              className="text-blue-500 hover:text-blue-600 transition-colors"
+                              aria-label={`Add subsection to section ${idx + 1}`}
+                              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg p-1"
                             >
                               + Add Point
                             </button>
@@ -1742,7 +1830,8 @@ export default function App() {
                                 }}
                                 rows="1"
                                 placeholder="Subsection text..."
-                                className={`flex-1 p-2.5 border rounded-lg font-medium text-xs outline-none focus:border-blue-500 ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-200'}`}
+                                aria-label={`Text for subsection ${String.fromCharCode(65 + subIdx)}`}
+                                className={`flex-1 p-2.5 border-2 rounded-lg font-medium text-xs outline-none focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-200'}`}
                               />
                               <button 
                                 type="button" 
@@ -1751,7 +1840,8 @@ export default function App() {
                                   next[idx].subsections.splice(subIdx, 1);
                                   setModalSections(next);
                                 }} 
-                                className="p-2 text-slate-400 hover:text-red-500 mt-1"
+                                aria-label="Remove subsection"
+                                className="p-2 text-slate-400 hover:text-red-500 mt-1 focus:outline-none focus:ring-2 focus:ring-red-500 rounded-lg"
                               >
                                 <X size={14} />
                               </button>
@@ -1766,13 +1856,14 @@ export default function App() {
                   <button 
                     type="button" 
                     onClick={() => setModalSections([...modalSections, { title: '', text: '', subsections: [] }])}
-                    className="w-full py-4 border-2 border-dashed border-blue-500/30 hover:border-blue-500 text-blue-500 font-bold rounded-3xl text-sm transition-colors"
+                    aria-label="Add new section block"
+                    className="w-full py-4 border-2 border-dashed border-blue-500/30 hover:border-blue-500 text-blue-600 dark:text-blue-400 font-bold rounded-3xl text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     + Add Another Section Block
                   </button>
                 </div>
 
-                <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-[24px] font-black text-xl shadow-2xl transition-transform active:scale-95">Save Article Configuration</button>
+                <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-[24px] font-black text-xl shadow-2xl transition-transform motion-safe:active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">Save Article Configuration</button>
               </form>
             </div>
           </div>
@@ -1780,38 +1871,38 @@ export default function App() {
 
         {/* Modal: Add/Edit Topic Jump Link */}
         {(isAddingQuickLink || editingQuickLink) && (
-          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[120] flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[120] flex items-center justify-center p-4 md:p-8 motion-safe:animate-in motion-safe:fade-in duration-300">
             <div className={`rounded-[32px] md:rounded-[56px] w-full max-w-lg p-6 md:p-12 shadow-2xl transition-colors ${isDarkMode ? 'bg-slate-950' : 'bg-white'}`}>
               <div className="flex justify-between items-center mb-10">
                 <h3 className={`text-2xl md:text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
                   {editingQuickLink ? "Modify Topic Link" : "Create Topic Link"}
                 </h3>
-                <button onClick={() => {setIsAddingQuickLink(false); setEditingQuickLink(null);}} className="text-slate-300 hover:text-slate-600 transition-colors"><X size={32}/></button>
+                <button onClick={() => {setIsAddingQuickLink(false); setEditingQuickLink(null);}} aria-label="Close modal" className="text-slate-400 hover:text-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 rounded-lg"><X size={32}/></button>
               </div>
 
               <form onSubmit={handleQuickLinkSubmit} className="space-y-6">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Topic Title</label>
-                  <input name="title" placeholder="e.g. How Recalls Work" required defaultValue={editingQuickLink?.title} className={`w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} />
+                  <label htmlFor="topicTitleInput" className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Topic Title</label>
+                  <input id="topicTitleInput" name="title" placeholder="e.g. How Recalls Work" required defaultValue={editingQuickLink?.title} className={`w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`} />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Quick Description</label>
-                  <input name="desc" placeholder="One sentence description..." required defaultValue={editingQuickLink?.desc} className={`w-full p-4 border-2 rounded-2xl font-semibold outline-none transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} />
+                  <label htmlFor="topicDescInput" className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Quick Description</label>
+                  <input id="topicDescInput" name="desc" placeholder="One sentence description..." required defaultValue={editingQuickLink?.desc} className={`w-full p-4 border-2 rounded-2xl font-semibold outline-none transition-all focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`} />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Target Article Link</label>
-                    <select name="articleId" defaultValue={editingQuickLink?.articleId} className={`w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`}>
+                    <label htmlFor="articleSelect" className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Target Article Link</label>
+                    <select id="articleSelect" name="articleId" defaultValue={editingQuickLink?.articleId} className={`w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`}>
                       {displayArticles.map(art => (
                         <option key={art.id} value={art.id}>Article {art.num} - {art.title}</option>
                       ))}
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Icon Preset</label>
-                    <select name="icon" defaultValue={editingQuickLink?.icon || "HelpCircle"} className={`w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`}>
+                    <label htmlFor="iconSelect" className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Icon Preset</label>
+                    <select id="iconSelect" name="icon" defaultValue={editingQuickLink?.icon || "HelpCircle"} className={`w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`}>
                       <option value="Users">Users (Candidacy)</option>
                       <option value="ShieldAlert">ShieldAlert (Recall/Security)</option>
                       <option value="Scale">Scale (Powers/Legal)</option>
@@ -1824,8 +1915,8 @@ export default function App() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Color Theme</label>
-                  <select name="colorTheme" defaultValue={editingQuickLink?.colorTheme || "blue"} className={`w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`}>
+                  <label htmlFor="themeSelect" className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Color Theme</label>
+                  <select id="themeSelect" name="colorTheme" defaultValue={editingQuickLink?.colorTheme || "blue"} className={`w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`}>
                     <option value="blue">Blue (Corporate)</option>
                     <option value="red">Red (Warning/Important)</option>
                     <option value="green">Green (Authority/Ecology)</option>
@@ -1834,111 +1925,119 @@ export default function App() {
                   </select>
                 </div>
 
-                <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-[24px] font-black text-xl shadow-2xl transition-transform active:scale-95">Save Topic Link</button>
+                <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-[24px] font-black text-xl shadow-2xl transition-transform motion-safe:active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">Save Topic Link</button>
               </form>
             </div>
           </div>
         )}
 
         {(isAddingMeeting || editingMeeting) && (
-          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[100] flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[100] flex items-center justify-center p-4 md:p-8 motion-safe:animate-in motion-safe:fade-in duration-300">
             <div className={`rounded-[32px] md:rounded-[56px] w-full max-w-2xl p-6 md:p-12 shadow-2xl max-h-[90vh] overflow-y-auto transition-colors ${isDarkMode ? 'bg-slate-950' : 'bg-white'}`}>
-              <div className="flex justify-between items-center mb-10"><h3 className={`text-2xl md:text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{editingMeeting ? "Configure Session Bench" : "New Meeting Date"}</h3><button onClick={() => {setIsAddingMeeting(false); setEditingMeeting(null);}} className="text-slate-300 hover:text-slate-600 transition-colors"><X size={32}/></button></div>
+              <div className="flex justify-between items-center mb-10"><h3 className={`text-2xl md:text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{editingMeeting ? "Configure Session Bench" : "New Meeting Date"}</h3><button onClick={() => {setIsAddingMeeting(false); setEditingMeeting(null);}} aria-label="Close modal" className="text-slate-400 hover:text-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 rounded-lg"><X size={32}/></button></div>
               <form onSubmit={handleMeetingSubmit} className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Date of Meeting</label><input name="date" type="date" required defaultValue={editingMeeting?.date} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
-                  <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Title</label><input name="title" placeholder="e.g. Special Meeting" required defaultValue={editingMeeting?.title} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
+                  <div className="space-y-2"><label htmlFor="meetingDate" className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Date of Meeting</label><input id="meetingDate" name="date" type="date" required defaultValue={editingMeeting?.date} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all focus:ring-2 focus:ring-blue-500 font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`} /></div>
+                  <div className="space-y-2"><label htmlFor="meetingTitle" className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Title</label><input id="meetingTitle" name="title" placeholder="e.g. Special Meeting" required defaultValue={editingMeeting?.title} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all focus:ring-2 focus:ring-blue-500 font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`} /></div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">YouTube Recording URL</label><input name="youtubeUrl" placeholder="https://..." defaultValue={editingMeeting?.youtubeUrl} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
-                  <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Official Agenda Link</label><input name="agendaUrl" placeholder="Link to PDF..." defaultValue={editingMeeting?.agendaUrl} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
+                  <div className="space-y-2"><label htmlFor="youtubeInput" className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">YouTube Recording URL</label><input id="youtubeInput" name="youtubeUrl" placeholder="https://..." defaultValue={editingMeeting?.youtubeUrl} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all focus:ring-2 focus:ring-blue-500 font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`} /></div>
+                  <div className="space-y-2"><label htmlFor="agendaInput" className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Official Agenda Link</label><input id="agendaInput" name="agendaUrl" placeholder="Link to PDF..." defaultValue={editingMeeting?.agendaUrl} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all focus:ring-2 focus:ring-blue-500 font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`} /></div>
                 </div>
 
                 <div className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-colors ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
-                   <input type="checkbox" name="hasExecutiveSession" id="hasExecutiveSession" defaultChecked={editingMeeting?.hasExecutiveSession} className="w-6 h-6 rounded border-slate-300 text-red-600" />
+                   <input type="checkbox" name="hasExecutiveSession" id="hasExecutiveSession" defaultChecked={editingMeeting?.hasExecutiveSession} className="w-6 h-6 rounded border-slate-300 text-red-600 focus:ring-red-500" />
                    <label htmlFor="hasExecutiveSession" className={`text-sm font-black uppercase tracking-widest ${isDarkMode ? 'text-slate-400' : 'text-slate-700'}`}>Executive Session for this Meeting</label>
                 </div>
 
                 <div className={`p-6 md:p-8 rounded-[32px] border transition-colors ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Bench Selection (Who was seated?)</p>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-6">Bench Selection (Who was seated?)</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {commissioners.sort((a,b) => (b.isActive?1:0) - (a.isActive?1:0)).map(comm => {
                       const isActive = editingMeeting?.activeCommissionerIds?.includes(comm.id) ?? comm.isActive;
-                      return (<label key={comm.id} className={`flex items-center gap-3 p-4 rounded-2xl border cursor-pointer hover:border-blue-500 transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-100'}`}><input type="checkbox" name={`active-${comm.id}`} defaultChecked={isActive} className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500" /><div className="flex items-center gap-2"><img src={comm.image} className={`w-8 h-8 rounded-full object-cover ${!comm.isActive && 'grayscale'}`} alt="" /><div><p className={`text-xs font-bold ${!comm.isActive ? 'text-slate-400 italic' : (isDarkMode ? 'text-slate-200' : 'text-slate-900')}`}>{comm.name}</p></div></div></label>);
+                      return (<label key={comm.id} className={`flex items-center gap-3 p-4 rounded-2xl border-2 cursor-pointer hover:border-blue-500 transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-100'}`}><input type="checkbox" name={`active-${comm.id}`} defaultChecked={isActive} className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500" /><div className="flex items-center gap-2"><img src={comm.image} className={`w-8 h-8 rounded-full object-cover ${!comm.isActive && 'grayscale'}`} alt="" /><div><p className={`text-xs font-bold ${!comm.isActive ? 'text-slate-500 italic' : (isDarkMode ? 'text-slate-200' : 'text-slate-900')}`}>{comm.name}</p></div></div></label>);
                     })}
                   </div>
                 </div>
-                <button type="submit" className="w-full bg-blue-600 text-white py-5 md:py-6 rounded-[24px] md:rounded-[32px] font-black text-lg md:text-xl shadow-2xl transition-transform active:scale-95">Save Session Configuration</button>
+                <button type="submit" className="w-full bg-blue-600 text-white py-5 md:py-6 rounded-[24px] md:rounded-[32px] font-black text-lg md:text-xl shadow-2xl transition-transform motion-safe:active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">Save Session Configuration</button>
               </form>
             </div>
           </div>
         )}
 
         {(isAddingItemToMeeting || editingItem) && (
-          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[110] flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[110] flex items-center justify-center p-4 md:p-8 motion-safe:animate-in motion-safe:fade-in duration-300">
             <div className={`rounded-[32px] md:rounded-[56px] w-full max-w-2xl p-6 md:p-12 shadow-2xl max-h-[90vh] overflow-y-auto transition-colors ${isDarkMode ? 'bg-slate-950' : 'bg-white'}`}>
-              <div className="flex justify-between items-center mb-10"><h3 className={`text-2xl md:text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{editingItem ? "Edit Agenda Item" : "Add Agenda Item"}</h3><button onClick={() => {setIsAddingItemToMeeting(null); setEditingItem(null);}} className="text-slate-300 hover:text-slate-600 transition-colors"><X size={32}/></button></div>
+              <div className="flex justify-between items-center mb-10"><h3 className={`text-2xl md:text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{editingItem ? "Edit Agenda Item" : "Add Agenda Item"}</h3><button onClick={() => {setIsAddingItemToMeeting(null); setEditingItem(null);}} aria-label="Close modal" className="text-slate-400 hover:text-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 rounded-lg"><X size={32}/></button></div>
               <form onSubmit={handleItemSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                   <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</label><input name="category" placeholder="e.g. Finance" defaultValue={editingItem?.itemData.category} required className={`w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
-                   <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Outcome</label><select name="status" defaultValue={editingItem?.itemData.status || "Upcoming"} className={`w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`}><option value="Upcoming">Upcoming</option><option value="Passed">Passed</option><option value="Failed">Failed</option><option value="Tabled">Tabled</option><option value="N/A (No Vote Required)">N/A (No Vote Required)</option></select></div>
+                   <div className="space-y-2"><label htmlFor="categoryInput" className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Category</label><input id="categoryInput" name="category" placeholder="e.g. Finance" defaultValue={editingItem?.itemData.category} required className={`w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`} /></div>
+                   <div className="space-y-2"><label htmlFor="statusSelect" className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Outcome</label><select id="statusSelect" name="status" defaultValue={editingItem?.itemData.status || "Upcoming"} className={`w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`}><option value="Upcoming">Upcoming</option><option value="Passed">Passed</option><option value="Failed">Failed</option><option value="Tabled">Tabled</option><option value="N/A (No Vote Required)">N/A (No Vote Required)</option></select></div>
                 </div>
-                <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Agenda Title</label><input name="title" placeholder="Official Title" required defaultValue={editingItem?.itemData.title} className={`w-full p-4 border-2 rounded-2xl font-bold text-lg outline-none transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
-                <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">YouTube Segment URL (Optional)</label><input name="timestampUrl" placeholder="https://..." defaultValue={editingItem?.itemData.timestampUrl} className={`w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
-                <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Public Summary</label><textarea name="description" placeholder="Description..." rows="4" defaultValue={editingItem?.itemData.description} className={`w-full p-4 border-2 rounded-3xl text-lg outline-none transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`}></textarea></div>
+                <div className="space-y-2"><label htmlFor="agendaTitleInput" className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Agenda Title</label><input id="agendaTitleInput" name="title" placeholder="Official Title" required defaultValue={editingItem?.itemData.title} className={`w-full p-4 border-2 rounded-2xl font-bold text-lg outline-none transition-all focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`} /></div>
+                <div className="space-y-2"><label htmlFor="agendaUrlInput" className="text-[10px] font-black text-slate-500 uppercase tracking-widest">YouTube Segment URL (Optional)</label><input id="agendaUrlInput" name="timestampUrl" placeholder="https://..." defaultValue={editingItem?.itemData.timestampUrl} className={`w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`} /></div>
+                <div className="space-y-2"><label htmlFor="agendaDescInput" className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Public Summary</label><textarea id="agendaDescInput" name="description" placeholder="Description..." rows="4" defaultValue={editingItem?.itemData.description} className={`w-full p-4 border-2 rounded-3xl text-lg outline-none transition-all focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`}></textarea></div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-colors ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
-                     <input type="checkbox" name="isConsentAgenda" id="isConsentAgenda" defaultChecked={editingItem?.itemData?.isConsentAgenda} className="w-6 h-6 rounded border-slate-300 text-purple-600" />
+                     <input type="checkbox" name="isConsentAgenda" id="isConsentAgenda" defaultChecked={editingItem?.itemData?.isConsentAgenda} className="w-6 h-6 rounded border-slate-300 text-purple-600 focus:ring-purple-500" />
                      <label htmlFor="isConsentAgenda" className={`text-sm font-black uppercase tracking-widest ${isDarkMode ? 'text-slate-400' : 'text-slate-700'}`}>Consent Agenda</label>
                   </div>
                   <div className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-colors ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
-                     <input type="checkbox" name="isRemovedFromConsent" id="isRemovedFromConsent" defaultChecked={editingItem?.itemData?.isRemovedFromConsent} className="w-6 h-6 rounded border-slate-300 text-amber-600" />
+                     <input type="checkbox" name="isRemovedFromConsent" id="isRemovedFromConsent" defaultChecked={editingItem?.itemData?.isRemovedFromConsent} className="w-6 h-6 rounded border-slate-300 text-amber-600 focus:ring-amber-500" />
                      <label htmlFor="isRemovedFromConsent" className={`text-sm font-black uppercase tracking-widest ${isDarkMode ? 'text-slate-400' : 'text-slate-700'}`}>Pulled from Consent</label>
                   </div>
                 </div>
 
-                <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-[24px] font-black text-xl shadow-2xl transition-transform active:scale-95">Save Item</button>
+                <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-[24px] font-black text-xl shadow-2xl transition-transform motion-safe:active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">Save Item</button>
               </form>
             </div>
           </div>
         )}
 
         {(isAddingCommissioner || editingCommissioner) && (
-          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[100] flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[100] flex items-center justify-center p-4 md:p-8 motion-safe:animate-in motion-safe:fade-in duration-300">
             <div className={`rounded-[32px] md:rounded-[56px] w-full max-w-2xl p-6 md:p-12 shadow-2xl max-h-[90vh] overflow-y-auto transition-colors ${isDarkMode ? 'bg-slate-950' : 'bg-white'}`}>
-              <div className="flex justify-between items-center mb-10"><h3 className={`text-2xl md:text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{editingCommissioner ? "Update Profile" : "New Member"}</h3><button onClick={() => {setIsAddingCommissioner(false); setEditingCommissioner(null);}} className="text-slate-300 hover:text-slate-600 transition-colors"><X size={32}/></button></div>
+              <div className="flex justify-between items-center mb-10"><h3 className={`text-2xl md:text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{editingCommissioner ? "Update Profile" : "New Member"}</h3><button onClick={() => {setIsAddingCommissioner(false); setEditingCommissioner(null);}} aria-label="Close modal" className="text-slate-400 hover:text-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 rounded-lg"><X size={32}/></button></div>
               <form onSubmit={handleCommissionerSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label><input name="name" required defaultValue={editingCommissioner?.name} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
-                  <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">District</label><input name="district" required defaultValue={editingCommissioner?.district} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
+                  <div className="space-y-2"><label htmlFor="commName" className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Full Name</label><input id="commName" name="name" required defaultValue={editingCommissioner?.name} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all focus:ring-2 focus:ring-blue-500 font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`} /></div>
+                  <div className="space-y-2"><label htmlFor="commDistrict" className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">District</label><input id="commDistrict" name="district" required defaultValue={editingCommissioner?.district} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all focus:ring-2 focus:ring-blue-500 font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`} /></div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Title / Role</label><input name="role" placeholder="e.g. Mayor" defaultValue={editingCommissioner?.role} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
-                  <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Current Term</label><input name="currentTerm" placeholder="2nd Term" defaultValue={editingCommissioner?.currentTerm} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
+                  <div className="space-y-2"><label htmlFor="commRole" className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Title / Role</label><input id="commRole" name="role" placeholder="e.g. Mayor" defaultValue={editingCommissioner?.role} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all focus:ring-2 focus:ring-blue-500 font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`} /></div>
+                  <div className="space-y-2"><label htmlFor="commTerm" className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Current Term</label><input id="commTerm" name="currentTerm" placeholder="2nd Term" defaultValue={editingCommissioner?.currentTerm} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all focus:ring-2 focus:ring-blue-500 font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`} /></div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Public Email</label><input name="email" type="email" placeholder="example@ci.alamogordo.nm.us" defaultValue={editingCommissioner?.email} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
-                  <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Office Phone</label><input name="phone" type="tel" placeholder="(575) 439-XXXX" defaultValue={editingCommissioner?.phone} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
+                  <div className="space-y-2"><label htmlFor="commEmail" className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Public Email</label><input id="commEmail" name="email" type="email" placeholder="example@ci.alamogordo.nm.us" defaultValue={editingCommissioner?.email} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all focus:ring-2 focus:ring-blue-500 font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`} /></div>
+                  <div className="space-y-2"><label htmlFor="commPhone" className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Office Phone</label><input id="commPhone" name="phone" type="tel" placeholder="(575) 439-XXXX" defaultValue={editingCommissioner?.phone} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all focus:ring-2 focus:ring-blue-500 font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`} /></div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Assumed Office</label><input name="assumedOffice" type="date" defaultValue={editingCommissioner?.assumedOffice} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
-                  <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Term Expires</label><input name="termExpires" type="date" defaultValue={editingCommissioner?.termExpires} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
+                  <div className="space-y-2"><label htmlFor="commAssumed" className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Assumed Office</label><input id="commAssumed" name="assumedOffice" type="date" defaultValue={editingCommissioner?.assumedOffice} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all focus:ring-2 focus:ring-blue-500 font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`} /></div>
+                  <div className="space-y-2"><label htmlFor="commExpires" className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Term Expires</label><input id="commExpires" name="termExpires" type="date" defaultValue={editingCommissioner?.termExpires} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all focus:ring-2 focus:ring-blue-500 font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`} /></div>
                 </div>
-                <div className="space-y-2"><label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Photo URL (Optional)</label><input name="image" placeholder="https://..." defaultValue={editingCommissioner?.image} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /></div>
+                <div className="space-y-2"><label htmlFor="commPhoto" className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Photo URL (Optional)</label><input id="commPhoto" name="image" placeholder="https://..." defaultValue={editingCommissioner?.image} className={`w-full p-5 border-2 rounded-[28px] outline-none transition-all focus:ring-2 focus:ring-blue-500 font-bold ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`} /></div>
                 <div className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-colors ${isDarkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
-                   <input type="checkbox" name="isActive" id="isActive" defaultChecked={editingCommissioner?.isActive ?? true} className="w-6 h-6 rounded border-slate-300 text-blue-600" />
+                   <input type="checkbox" name="isActive" id="isActive" defaultChecked={editingCommissioner?.isActive ?? true} className="w-6 h-6 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
                    <label htmlFor="isActive" className={`text-sm font-black uppercase tracking-widest ${isDarkMode ? 'text-slate-400' : 'text-slate-700'}`}>Active Commissioner</label>
                 </div>
-                <button type="submit" className="w-full bg-orange-500 text-white py-5 rounded-[24px] font-black text-xl shadow-2xl transition-transform active:scale-95">Save Member Archive</button>
+                <button type="submit" className="w-full bg-orange-500 text-white py-5 rounded-[24px] font-black text-xl shadow-2xl transition-transform motion-safe:active:scale-95 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">Save Member Archive</button>
               </form>
             </div>
           </div>
         )}
 
         {isLoginModalOpen && (
-          <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
-            <div className={`rounded-[40px] w-full max-md p-10 shadow-2xl relative transition-colors ${isDarkMode ? 'bg-slate-950' : 'bg-white'}`}><div className="flex justify-between items-center mb-10"><h3 className={`text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Admin Portal</h3><button onClick={() => {setIsLoginModalOpen(false)}} className="text-slate-300 hover:text-slate-600 transition-colors"><X size={32}/></button></div>{loginError && (<div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600 text-sm font-bold"><AlertCircle size={20} /> {loginError}</div>)}<form onSubmit={handleLogin} className="space-y-6"><input name="email" type="email" required placeholder="Email" className={`w-full p-4 border-2 rounded-2xl outline-none font-bold transition-all ${isDarkMode ? 'bg-slate-900 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /><input name="password" type="password" required placeholder="Password" className={`w-full p-4 border-2 rounded-2xl outline-none font-bold transition-all ${isDarkMode ? 'bg-slate-900 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`} /><button type="submit" disabled={isLoggingIn} className="w-full bg-slate-900 text-white py-5 rounded-[24px] font-black text-lg disabled:opacity-50 transition-transform active:scale-95">{isLoggingIn ? "Signing In..." : "Log In"}</button></form></div>
+          <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[200] flex items-center justify-center p-6 motion-safe:animate-in motion-safe:fade-in duration-300">
+            <div className={`rounded-[40px] w-full max-w-md p-10 shadow-2xl relative transition-colors ${isDarkMode ? 'bg-slate-950' : 'bg-white'}`}>
+              <div className="flex justify-between items-center mb-10"><h3 className={`text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Admin Portal</h3><button onClick={() => {setIsLoginModalOpen(false)}} aria-label="Close admin login" className="text-slate-400 hover:text-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 rounded-lg"><X size={32}/></button></div>
+              {loginError && (<div className="mb-8 p-4 bg-red-100 border border-red-200 dark:bg-red-900/30 dark:border-red-900/50 rounded-2xl flex items-center gap-3 text-red-800 dark:text-red-300 text-sm font-bold"><AlertCircle size={20} /> {loginError}</div>)}
+              <form onSubmit={handleLogin} className="space-y-6">
+                <input name="email" type="email" required placeholder="Email" aria-label="Email Address" className={`w-full p-4 border-2 rounded-2xl outline-none font-bold transition-all focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-slate-900 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`} />
+                <input name="password" type="password" required placeholder="Password" aria-label="Password" className={`w-full p-4 border-2 rounded-2xl outline-none font-bold transition-all focus:ring-2 focus:ring-blue-500 ${isDarkMode ? 'bg-slate-900 border-slate-800 text-white' : 'bg-slate-50 border-slate-100'}`} />
+                <button type="submit" disabled={isLoggingIn} className="w-full bg-slate-900 dark:bg-blue-600 text-white py-5 rounded-[24px] font-black text-lg disabled:opacity-50 transition-transform motion-safe:active:scale-95 focus:outline-none focus:ring-2 focus:ring-slate-500 dark:focus:ring-blue-500 focus:ring-offset-2">{isLoggingIn ? "Signing In..." : "Log In"}</button>
+              </form>
+            </div>
           </div>
         )}
       </main>
