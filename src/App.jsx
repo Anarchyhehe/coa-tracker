@@ -156,9 +156,25 @@ const defaultCharterArticles = [
     order: 0,
     summary: 'Establishes the City of Alamogordo as a municipal corporation under New Mexico law and grants it all powers of local self-government, including the ability to adopt ordinances, levy taxes, and manage municipal services.',
     sections: [
-      { title: 'Section 1.01 - Body Politic', text: 'The inhabitants of the City of Alamogordo, New Mexico, within the boundaries now established or as hereafter established, shall continue to be a body politic and corporate under the name of the City of Alamogordo.' },
-      { title: 'Section 1.02 - Powers of the City', text: 'The City shall have all powers possible for a city to have under the Constitution and laws of New Mexico, as fully and completely as though they were specifically enumerated in this Charter. These powers shall be exercised in the manner prescribed in this Charter, or if not prescribed, then as established by ordinance or state law.' },
-      { title: 'Section 1.03 - Construction of Powers', text: 'The powers of the City under this Charter shall be construed liberally in favor of the City, and the specific mention of particular powers shall not be deemed to limit in any way the general powers stated in this article.' }
+      { 
+        title: 'Section 1.01 - Body Politic', 
+        text: 'The inhabitants of the City of Alamogordo, New Mexico, within the boundaries now established or as hereafter established, shall continue to be a body politic and corporate under the name of the City of Alamogordo.',
+        subsections: []
+      },
+      { 
+        title: 'Section 1.02 - Powers of the City', 
+        text: 'The City shall have all powers possible for a city to have under the Constitution and laws of New Mexico. These specific powers include:',
+        subsections: [
+          'To adopt ordinances and resolutions necessary to protect the public health, safety, and welfare.',
+          'To levy and collect taxes, special assessments, and utility charges.',
+          'To exercise the power of eminent domain when required for public projects.'
+        ]
+      },
+      { 
+        title: 'Section 1.03 - Construction of Powers', 
+        text: 'The powers of the City under this Charter shall be construed liberally in favor of the City, and the specific mention of particular powers shall not be deemed to limit in any way the general powers stated in this article.',
+        subsections: []
+      }
     ]
   },
   {
@@ -168,9 +184,25 @@ const defaultCharterArticles = [
     order: 1,
     summary: 'Governs local elections, voter eligibility, initiative and referendum petitions, and the formal recall process for elected officials.',
     sections: [
-      { title: 'Section 2.01 - Elective Offices', text: 'The elective offices of the city shall be a Mayor, elected at-large, and six Commissioners, elected from districts. Elections shall be non-partisan and conducted under the New Mexico Local Election Act.' },
-      { title: 'Section 2.02 - The Recall Process', text: 'Any elected official of the City of Alamogordo may be recalled from office by the registered voters. A petition for recall must state specific grounds (such as malfeasance, misfeasance, or neglect of duty) and must be signed by registered voters of the district (or at-large for the Mayor) equal in number to at least twenty percent (20%) of the total votes cast for the office at the last regular municipal election. Signatures must be collected and certified by the City Clerk within the designated legal timeframe.' },
-      { title: 'Section 2.03 - Initiative and Referendum', text: 'The voters of the City have the power of initiative to propose ordinances to the Commission and referendum to require reconsideration of any adopted ordinance. Petitions require signatures from registered voters equal to fifteen percent (15%) of the total qualified electors of the city.' }
+      { 
+        title: 'Section 2.01 - Elective Offices', 
+        text: 'The elective offices of the city shall be a Mayor, elected at-large, and six Commissioners, elected from districts. Elections shall be non-partisan and conducted under the New Mexico Local Election Act.',
+        subsections: []
+      },
+      { 
+        title: 'Section 2.02 - The Recall Process', 
+        text: 'Any elected official of the City of Alamogordo may be recalled from office by the registered voters. A petition for recall must meet the following criteria:',
+        subsections: [
+          'It must state specific grounds such as malfeasance, misfeasance, or neglect of duty.',
+          'It must be signed by registered voters of the district equal in number to at least twenty percent (20%) of the total votes cast for the office at the last regular municipal election.',
+          'Signatures must be collected and certified by the City Clerk within the designated legal timeframe.'
+        ]
+      },
+      { 
+        title: 'Section 2.03 - Initiative and Referendum', 
+        text: 'The voters of the City have the power of initiative to propose ordinances to the Commission and referendum to require reconsideration of any adopted ordinance. Petitions require signatures from registered voters equal to fifteen percent (15%) of the total qualified electors of the city.',
+        subsections: []
+      }
     ]
   },
   {
@@ -180,10 +212,30 @@ const defaultCharterArticles = [
     order: 2,
     summary: 'Defines the governing body of the city, including qualifications for candidacy, terms of office, composition, compensation rules, and meeting procedures.',
     sections: [
-      { title: 'Section 3.01 - Composition and Terms', text: 'The City Commission consists of the Mayor and six Commissioners. They are elected for staggered four-year terms, with three commissioners elected every two years.' },
-      { title: 'Section 3.02 - Qualifications for Candidacy', text: 'Candidates for City Commission must be registered voters of the City and must reside within the boundaries of the district they seek to represent at the time of filing. The Mayor must be a resident of the City at-large.' },
-      { title: 'Section 3.03 - Vacancies and Forfeiture', text: 'The office of a commissioner or mayor becomes vacant upon death, resignation, removal from office, or moving out of the city or district. Vacancies are filled by appointment by a majority vote of the remaining members of the Commission.' },
-      { title: 'Section 3.04 - Mayor and Mayor Pro Tem', text: 'The Mayor presides at meetings of the Commission and is recognized as the head of the City government for ceremonial purposes. The Commission elects a Mayor Pro Tem from its members to act in the absence of the Mayor.' }
+      { 
+        title: 'Section 3.01 - Composition and Terms', 
+        text: 'The City Commission consists of the Mayor and six Commissioners. They are elected for staggered four-year terms, with three commissioners elected every two years.',
+        subsections: []
+      },
+      { 
+        title: 'Section 3.02 - Qualifications for Candidacy', 
+        text: 'Candidates for City Commission must meet several requirements prior to filing:',
+        subsections: [
+          'Must be registered voters of the City.',
+          'Must reside within the boundaries of the district they seek to represent at the time of filing.',
+          'The Mayor must be a resident of the City at-large.'
+        ]
+      },
+      { 
+        title: 'Section 3.03 - Vacancies and Forfeiture', 
+        text: 'The office of a commissioner or mayor becomes vacant upon death, resignation, removal from office, or moving out of the city or district. Vacancies are filled by appointment by a majority vote of the remaining members of the Commission.',
+        subsections: []
+      },
+      { 
+        title: 'Section 3.04 - Mayor and Mayor Pro Tem', 
+        text: 'The Mayor presides at meetings of the Commission and is recognized as the head of the City government for ceremonial purposes. The Commission elects a Mayor Pro Tem from its members to act in the absence of the Mayor.',
+        subsections: []
+      }
     ]
   },
   {
@@ -318,7 +370,8 @@ export default function App() {
   const [isAddingCharterArticle, setIsAddingCharterArticle] = useState(false);
   const [editingQuickLink, setEditingQuickLink] = useState(null);
   const [isAddingQuickLink, setIsAddingQuickLink] = useState(false);
-  const [modalSections, setModalSections] = useState([{ title: '', text: '' }]);
+  // Updated initial state to include subsections array
+  const [modalSections, setModalSections] = useState([{ title: '', text: '', subsections: [] }]);
 
   const [loginError, setLoginError] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -524,11 +577,18 @@ export default function App() {
     e.preventDefault();
     setCharterMessage("Saving article config...");
     const formData = new FormData(e.target);
+    
+    // Clean up empty subsections before saving
+    const cleanedSections = modalSections.map(sec => ({
+      ...sec,
+      subsections: (sec.subsections || []).filter(sub => sub.trim() !== '')
+    }));
+
     const data = {
       num: formData.get('num'),
       title: formData.get('title'),
       summary: formData.get('summary'),
-      sections: modalSections
+      sections: cleanedSections
     };
 
     try {
@@ -1276,7 +1336,7 @@ export default function App() {
 
             {/* Dual Panel Layout */}
             <div className="flex flex-col lg:flex-row gap-10">
-              {/* Left panel: List of 12 articles */}
+              {/* Left panel: List of articles */}
               <div className="w-full lg:w-1/3 space-y-3">
                 <div className={`p-4 rounded-[28px] border mb-4 flex items-center justify-between ${isDarkMode ? 'bg-slate-900/50 border-slate-800' : 'bg-slate-100/50 border-slate-200'}`}>
                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2">Table of Articles</p>
@@ -1334,7 +1394,7 @@ export default function App() {
                             <button 
                               onClick={() => {
                                 setEditingCharterArticle(art);
-                                setModalSections(art.sections || [{ title: '', text: '' }]);
+                                setModalSections(art.sections?.map(s => ({ ...s, subsections: s.subsections || [] })) || [{ title: '', text: '', subsections: [] }]);
                               }}
                               className={`p-1 hover:text-orange-400 ${isActive ? 'text-white' : 'text-slate-400'}`}
                             >
@@ -1361,7 +1421,7 @@ export default function App() {
                     <button 
                       onClick={() => {
                         setIsAddingCharterArticle(true);
-                        setModalSections([{ title: '', text: '' }]);
+                        setModalSections([{ title: '', text: '', subsections: [] }]);
                       }}
                       className="w-full py-4 bg-blue-600/10 hover:bg-blue-600/20 text-blue-500 font-bold rounded-2xl flex items-center justify-center gap-2 text-sm border-2 border-dashed border-blue-500/20 transition-all"
                     >
@@ -1409,7 +1469,25 @@ export default function App() {
                         {art.sections?.map((sec, idx) => (
                           <div key={idx} className={`p-6 rounded-3xl border transition-colors ${isDarkMode ? 'bg-slate-950/50 border-slate-800/60 hover:border-slate-800' : 'bg-slate-50/50 border-slate-100 hover:border-slate-200/60'}`}>
                             <h4 className={`font-black text-lg mb-3 ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>{sec.title}</h4>
-                            <p className={`text-sm leading-relaxed font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>{sec.text}</p>
+                            
+                            {sec.text && (
+                              <p className={`text-sm leading-relaxed font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                                {sec.text}
+                              </p>
+                            )}
+
+                            {sec.subsections && sec.subsections.length > 0 && (
+                              <div className="mt-4 space-y-3 pl-2">
+                                {sec.subsections.map((sub, subIdx) => (
+                                  <div key={subIdx} className="flex items-start gap-3">
+                                    <span className="font-bold text-blue-500 shrink-0 mt-0.5 w-5">{String.fromCharCode(65 + subIdx)}.</span>
+                                    <span className={`text-sm leading-relaxed font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                                      {sub}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         ))}
                         {(!art.sections || art.sections.length === 0) && (
@@ -1536,7 +1614,7 @@ export default function App() {
         {/* Modal: Add/Edit Charter Article */}
         {(isAddingCharterArticle || editingCharterArticle) && (
           <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-xl z-[120] flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
-            <div className={`rounded-[32px] md:rounded-[56px] w-full max-w-2xl p-6 md:p-12 shadow-2xl max-h-[90vh] overflow-y-auto transition-colors ${isDarkMode ? 'bg-slate-950' : 'bg-white'}`}>
+            <div className={`rounded-[32px] md:rounded-[56px] w-full max-w-3xl p-6 md:p-12 shadow-2xl max-h-[90vh] overflow-y-auto transition-colors ${isDarkMode ? 'bg-slate-950' : 'bg-white'}`}>
               <div className="flex justify-between items-center mb-10">
                 <h3 className={`text-2xl md:text-3xl font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
                   {editingCharterArticle ? `Modify Article ${editingCharterArticle.num}` : "Create Charter Article"}
@@ -1561,52 +1639,109 @@ export default function App() {
                   <textarea name="summary" placeholder="Provide a summary translation..." rows="3" required defaultValue={editingCharterArticle?.summary} className={`w-full p-4 border-2 rounded-3xl font-semibold outline-none transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-blue-600 text-white' : 'bg-slate-50 border-slate-100 focus:border-blue-500'}`}></textarea>
                 </div>
 
-                {/* Subsections Array Editor */}
+                {/* Sections Array Editor */}
                 <div className="space-y-4">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Charter Sections / Provisions</label>
-                  <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                     {modalSections.map((sec, idx) => (
-                      <div key={idx} className={`p-5 rounded-2xl border-2 relative space-y-3 ${isDarkMode ? 'bg-slate-900 border-slate-800/80' : 'bg-slate-50 border-slate-100'}`}>
+                      <div key={idx} className={`p-6 rounded-[28px] border-2 relative space-y-4 ${isDarkMode ? 'bg-slate-900 border-slate-800/80' : 'bg-slate-50 border-slate-100'}`}>
                         <button 
                           type="button" 
                           onClick={() => setModalSections(modalSections.filter((_, i) => i !== idx))}
-                          className="absolute top-4 right-4 text-slate-400 hover:text-red-500 transition-colors"
+                          className="absolute top-5 right-5 text-slate-400 hover:text-red-500 transition-colors"
                         >
                           <X size={16} />
                         </button>
-                        <input 
-                          placeholder={`Section Code (e.g. Section ${idx + 1}.01 - Name)`}
-                          value={sec.title}
-                          onChange={(e) => {
-                            const next = [...modalSections];
-                            next[idx].title = e.target.value;
-                            setModalSections(next);
-                          }}
-                          required
-                          className={`w-full p-3 border rounded-xl font-bold text-xs ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-100'}`}
-                        />
-                        <textarea 
-                          placeholder="Provision text..."
-                          value={sec.text}
-                          onChange={(e) => {
-                            const next = [...modalSections];
-                            next[idx].text = e.target.value;
-                            setModalSections(next);
-                          }}
-                          required
-                          rows="2"
-                          className={`w-full p-3 border rounded-xl font-medium text-xs ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-100'}`}
-                        />
+                        
+                        <div className="space-y-1.5 pr-8">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Section Heading</label>
+                          <input 
+                            placeholder={`e.g. Section ${idx + 1}.01 - Subject Name`}
+                            value={sec.title}
+                            onChange={(e) => {
+                              const next = [...modalSections];
+                              next[idx].title = e.target.value;
+                              setModalSections(next);
+                            }}
+                            required
+                            className={`w-full p-3 border rounded-xl font-bold text-sm outline-none focus:border-blue-500 ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-100'}`}
+                          />
+                        </div>
+                        
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Base Provision Text</label>
+                          <textarea 
+                            placeholder="Opening paragraph of the section..."
+                            value={sec.text}
+                            onChange={(e) => {
+                              const next = [...modalSections];
+                              next[idx].text = e.target.value;
+                              setModalSections(next);
+                            }}
+                            rows="2"
+                            className={`w-full p-3 border rounded-xl font-medium text-sm outline-none focus:border-blue-500 ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-100'}`}
+                          />
+                        </div>
+
+                        {/* Nested Subsections Editor */}
+                        <div className={`p-4 rounded-2xl space-y-3 ${isDarkMode ? 'bg-slate-950/50' : 'bg-white/50'}`}>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex justify-between items-center">
+                            <span>Subsections (A, B, C...)</span>
+                            <button 
+                              type="button" 
+                              onClick={() => {
+                                const next = [...modalSections];
+                                if (!next[idx].subsections) next[idx].subsections = [];
+                                next[idx].subsections.push('');
+                                setModalSections(next);
+                              }}
+                              className="text-blue-500 hover:text-blue-600 transition-colors"
+                            >
+                              + Add Point
+                            </button>
+                          </label>
+                          
+                          {(sec.subsections || []).map((sub, subIdx) => (
+                            <div key={subIdx} className="flex items-start gap-2">
+                              <span className={`font-black mt-2.5 w-6 text-center ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                                {String.fromCharCode(65 + subIdx)}.
+                              </span>
+                              <textarea
+                                value={sub}
+                                onChange={(e) => {
+                                  const next = [...modalSections];
+                                  next[idx].subsections[subIdx] = e.target.value;
+                                  setModalSections(next);
+                                }}
+                                rows="1"
+                                placeholder="Subsection text..."
+                                className={`flex-1 p-2.5 border rounded-lg font-medium text-xs outline-none focus:border-blue-500 ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-200'}`}
+                              />
+                              <button 
+                                type="button" 
+                                onClick={() => {
+                                  const next = [...modalSections];
+                                  next[idx].subsections.splice(subIdx, 1);
+                                  setModalSections(next);
+                                }} 
+                                className="p-2 text-slate-400 hover:text-red-500 mt-1"
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+
                       </div>
                     ))}
                   </div>
 
                   <button 
                     type="button" 
-                    onClick={() => setModalSections([...modalSections, { title: '', text: '' }])}
-                    className="w-full py-3 border-2 border-dashed border-blue-500/30 hover:border-blue-500 text-blue-500 font-bold rounded-2xl text-xs transition-colors"
+                    onClick={() => setModalSections([...modalSections, { title: '', text: '', subsections: [] }])}
+                    className="w-full py-4 border-2 border-dashed border-blue-500/30 hover:border-blue-500 text-blue-500 font-bold rounded-3xl text-sm transition-colors"
                   >
-                    + Add Section Block
+                    + Add Another Section Block
                   </button>
                 </div>
 
